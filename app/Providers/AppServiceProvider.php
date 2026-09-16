@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Bus\CachedQueryBus;
+use App\Bus\CommandBus;
 use App\Bus\QueryBus;
+use App\Interfaces\CommandBusInterface;
 use App\Interfaces\QueryBusInterface;
 use App\Repositories\Contracts\FurnitureRepositoryContract;
 use App\Repositories\FurnitureRepository;
@@ -30,6 +32,8 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->bind(FurnitureRepositoryContract::class, FurnitureRepository::class);
+
+        $this->app->bind(CommandBusInterface::class, CommandBus::class);
     }
 
     /**

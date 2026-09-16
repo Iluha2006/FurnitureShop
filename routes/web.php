@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FurnitureCategoryController;
 use App\Http\Controllers\FurnitureController;
@@ -34,6 +35,20 @@ Route::prefix('{current_team}')
 Route::middleware(['auth'])->group(function () {
     Route::post('invitations/{invitation}/accept', [TeamInvitationController::class, 'accept'])->name('invitations.accept');
     Route::delete('invitations/{invitation}', [TeamInvitationController::class, 'decline'])->name('invitations.decline');
+});
+
+Route::middleware(['auth'])->prefix('cart')->name('cart.')->group(function () {
+    Route::post('add', [CartController::class, 'add'])->name('add');
+    Route::post('items/{furniture_id}/increment', [CartController::class, 'increment'])
+        ->whereNumber('furniture_id')
+        ->name('increment');
+    Route::post('items/{furniture_id}/decrement', [CartController::class, 'decrement'])
+        ->whereNumber('furniture_id')
+        ->name('decrement');
+    Route::delete('items/{furniture_id}', [CartController::class, 'remove'])
+        ->whereNumber('furniture_id')
+        ->name('remove');
+    Route::post('clear', [CartController::class, 'clear'])->name('clear');
 });
 
 require __DIR__.'/settings.php';
