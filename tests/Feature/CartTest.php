@@ -12,6 +12,7 @@ use App\Models\Furniture;
 use App\Models\User;
 use App\Queries\GetCartQuery;
 use App\Repositories\CartRepository;
+use Inertia\Testing\AssertableInertia as Assert;
 
 test('currency formats ruble amounts with a Руб. suffix', function () {
     expect(Currency::Ruble->format('25000.00'))->toBe('25 000 Руб.')
@@ -230,4 +231,42 @@ test('query bus returns empty cart for a new user', function () {
         ->and($cartData->total)->toBe('0.00')
         ->and($cartData->total_formatted)->toBe('0 Руб.')
         ->and($cartData->items)->toBeEmpty();
+});
+
+test('guests are redirected to login when visiting the cart page', function () {
+    $this->get(route('cart.index'))->assertRedirect(route('login'));
+});
+
+test('authenticated users can fetch cart data through the cart index route', function () {
+    $user = User::factory()->create();
+    $furniture = Furniture::factory()->create(['price' => '15000.00']);
+
+    app(CommandBusInterface::class)->dispatch(
+        new AddToCartCommand($user->id, $furniture->furniture_id, 2),
+    );
+
+    $response = $this->actingAs($user)->get(route('cart.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('cart/index')
+        ->where('cart.count', 2)
+        ->where('cart.total_formatted', '30 000 Руб.')
+        ->has('cart.items', 1)
+        ->where('cart.items.0.price_formatted', '15 000 Руб.'),
+    );
+});
+
+test('cart index renders an empty cart for a user without items', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('cart.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('cart/index')
+        ->where('cart.count', 0)
+        ->where('cart.total_formatted', '0 Руб.')
+        ->where('cart.items', []),
+    );
 });

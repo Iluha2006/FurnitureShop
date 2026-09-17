@@ -6,14 +6,8 @@ use App\Enums\Currency;
 use App\Models\CartItem;
 use Illuminate\Support\Collection;
 
-/**
- * Aggregated cart projection shared to the UI after every mutation.
- */
 readonly class CartData
 {
-    /**
-     * @param  list<CartItemData>  $items
-     */
     public function __construct(
         public array $items,
         public string $total,
@@ -23,9 +17,6 @@ readonly class CartData
         //
     }
 
-    /**
-     * @param  Collection<int, CartItem>  $items
-     */
     public static function fromItems(Collection $items): self
     {
         $first = $items->first();

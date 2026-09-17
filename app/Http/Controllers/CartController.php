@@ -9,15 +9,29 @@ use App\Command\IncrementCartItemCommand;
 use App\Command\RemoveFromCartCommand;
 use App\Http\Requests\Cart\AddToCartRequest;
 use App\Interfaces\CommandBusInterface;
+use App\Interfaces\QueryBusInterface;
+use App\Queries\GetCartQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class CartController extends Controller
 {
     public function __construct(
         private readonly CommandBusInterface $commandBus,
+        private readonly QueryBusInterface $queryBus,
     ) {
         //
+    }
+
+    public function index(Request $request): Response
+    {
+        $cartData = $this->queryBus->ask(new GetCartQuery($request->user()->id));
+
+        return Inertia::render('cart/index', [
+            'cart' => $cartData,
+        ]);
     }
 
     public function add(AddToCartRequest $request): RedirectResponse

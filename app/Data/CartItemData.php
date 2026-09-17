@@ -6,9 +6,6 @@ use App\Enums\Currency;
 use App\Models\CartItem;
 use App\Models\FurnitureImage;
 
-/**
- * A single cart line, projected with ruble-formatted prices for the UI.
- */
 readonly class CartItemData
 {
     public function __construct(
