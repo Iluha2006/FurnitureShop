@@ -19,12 +19,12 @@ type Props = {
 export default function Register({ passwordRules, teamInvitation }: Props) {
     return (
         <>
-            <Head title="Register" />
+            <Head title="Регистрация" />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
-                className="flex flex-col gap-6"
+                className="auth-form"
             >
                 {({ processing, errors }) => (
                     <>
@@ -35,9 +35,11 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                             />
                         )}
 
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                        <div className="auth-fields">
+                            <div className="auth-field">
+                                <Label htmlFor="name" className="auth-label">
+                                    Имя
+                                </Label>
                                 <Input
                                     id="name"
                                     type="text"
@@ -46,16 +48,19 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                     tabIndex={1}
                                     autoComplete="name"
                                     name="name"
-                                    placeholder="Full name"
+                                    placeholder="Ваше имя"
+                                    className="auth-input"
                                 />
                                 <InputError
                                     message={errors.name}
-                                    className="mt-2"
+                                    className="auth-error"
                                 />
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                            <div className="auth-field">
+                                <Label htmlFor="email" className="auth-label">
+                                    Email адрес
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -64,27 +69,34 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
+                                    className="auth-input"
                                 />
-                                <InputError message={errors.email} />
+                                <InputError message={errors.email} className="auth-error" />
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
+                            <div className="auth-field">
+                                <Label htmlFor="password" className="auth-label">
+                                    Пароль
+                                </Label>
                                 <PasswordInput
                                     id="password"
                                     required
                                     tabIndex={3}
                                     autoComplete="new-password"
                                     name="password"
-                                    placeholder="Password"
+                                    placeholder="Пароль"
                                     passwordrules={passwordRules}
+                                    className="auth-input"
                                 />
-                                <InputError message={errors.password} />
+                                <InputError message={errors.password} className="auth-error" />
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
+                            <div className="auth-field">
+                                <Label
+                                    htmlFor="password_confirmation"
+                                    className="auth-label"
+                                >
+                                    Подтверждение пароля
                                 </Label>
                                 <PasswordInput
                                     id="password_confirmation"
@@ -92,27 +104,29 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                     tabIndex={4}
                                     autoComplete="new-password"
                                     name="password_confirmation"
-                                    placeholder="Confirm password"
+                                    placeholder="Повторите пароль"
                                     passwordrules={passwordRules}
+                                    className="auth-input"
                                 />
                                 <InputError
                                     message={errors.password_confirmation}
+                                    className="auth-error"
                                 />
                             </div>
 
                             <Button
                                 type="submit"
-                                className="mt-2 w-full"
+                                className="auth-btn"
                                 tabIndex={5}
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
-                                Create account
+                                Создать аккаунт
                             </Button>
                         </div>
 
-                        <div className="text-muted-foreground text-center text-sm">
-                            Already have an account?{' '}
+                        <div className="auth-foot">
+                            Уже есть аккаунт?{' '}
                             <TextLink
                                 href={
                                     teamInvitation
@@ -126,8 +140,9 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                 }
                                 data-test="team-invitation-login-link"
                                 tabIndex={6}
+                                className="auth-link"
                             >
-                                Log in
+                                Войти
                             </TextLink>
                         </div>
                     </>
@@ -138,6 +153,6 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
 }
 
 Register.layout = {
-    title: 'Create an account',
-    description: 'Enter your details below to create your account',
+    title: 'Создание аккаунта',
+    description: 'Введите данные ниже, чтобы создать аккаунт',
 };

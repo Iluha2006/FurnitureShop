@@ -52,25 +52,12 @@ export default function Welcome({ categories, hits, productCount }: Props) {
                                 </Link>
                             ) : null}
                         </div>
-                        <div className="hero__stats">
-                            <div>
-                                <b>{categories.length}</b>
-                                <span>категорий мебели</span>
-                            </div>
-                            <div>
-                                <b>{productCount}</b>
-                                <span>моделей в наличии</span>
-                            </div>
-                            <div>
-                                <b>12 лет</b>
-                                <span>на мебельном рынке</span>
-                            </div>
-                        </div>
+                       
                     </div>
                     <div className="hero__visual" aria-hidden="true">
                         <img
-                            className="hero__image"
-                            src="https://interior-market.ru/upload/resize_cache/iblock/878/930_672_1/15lr214oqoewn1oirhsofw2mad03bs5g.jpeg"
+                            className="hero__featured-img"
+                            src="https://cdn.nonton.ru/s3/2784x840/iblock/dc2/dc2cf513f826a264129773406b705fbe/cfbf07dc8764b4975e7dad652272e7e6.webp"
                             alt=""
                         />
                     </div>

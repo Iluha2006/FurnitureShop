@@ -1,6 +1,7 @@
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import PasskeyVerify from '@/components/passkey-verify';
 import TeamInvitationAlert from '@/components/team-invitation-alert';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
-import PasskeyVerify from '@/components/passkey-verify';
 import type { TeamInvitationContext } from '@/types';
 
 type Props = {
@@ -27,7 +27,7 @@ export default function Login({
 }: Props) {
     return (
         <>
-            <Head title="Log in" />
+            <Head title="Вход" />
 
             {teamInvitation && (
                 <TeamInvitationAlert
@@ -41,13 +41,15 @@ export default function Login({
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
-                className="flex flex-col gap-6"
+                className="auth-form"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                        <div className="auth-fields">
+                            <div className="auth-field">
+                                <Label htmlFor="email" className="auth-label">
+                                    Email адрес
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -57,20 +59,23 @@ export default function Login({
                                     tabIndex={1}
                                     autoComplete="email"
                                     placeholder="email@example.com"
+                                    className="auth-input"
                                 />
-                                <InputError message={errors.email} />
+                                <InputError message={errors.email} className="auth-error" />
                             </div>
 
-                            <div className="grid gap-2">
-                                <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
+                            <div className="auth-field">
+                                <div className="auth-row">
+                                    <Label htmlFor="password" className="auth-label">
+                                        Пароль
+                                    </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
-                                            className="ml-auto text-sm"
+                                            className="auth-link"
                                             tabIndex={5}
                                         >
-                                            Forgot password?
+                                            Забыли пароль?
                                         </TextLink>
                                     )}
                                 </div>
@@ -80,34 +85,38 @@ export default function Login({
                                     required
                                     tabIndex={2}
                                     autoComplete="current-password"
-                                    placeholder="Password"
+                                    placeholder="Пароль"
+                                    className="auth-input"
                                 />
-                                <InputError message={errors.password} />
+                                <InputError message={errors.password} className="auth-error" />
                             </div>
 
-                            <div className="flex items-center space-x-3">
+                            <div className="auth-row auth-row--check">
                                 <Checkbox
                                     id="remember"
                                     name="remember"
                                     tabIndex={3}
+                                    className="auth-checkbox"
                                 />
-                                <Label htmlFor="remember">Remember me</Label>
+                                <Label htmlFor="remember" className="auth-label">
+                                    Запомнить меня
+                                </Label>
                             </div>
 
                             <Button
                                 type="submit"
-                                className="mt-4 w-full"
+                                className="auth-btn"
                                 tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
                             >
                                 {processing && <Spinner />}
-                                Log in
+                                Войти
                             </Button>
                         </div>
 
-                        <div className="text-muted-foreground text-center text-sm">
-                            Don't have an account?{' '}
+                        <div className="auth-foot">
+                            Нет аккаунта?{' '}
                             <TextLink
                                 href={register({
                                     query: {
@@ -116,8 +125,9 @@ export default function Login({
                                 })}
                                 data-test="register-link"
                                 tabIndex={5}
+                                className="auth-link"
                             >
-                                Sign up
+                                Зарегистрироваться
                             </TextLink>
                         </div>
                     </>
@@ -125,15 +135,13 @@ export default function Login({
             </Form>
 
             {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
+                <div className="auth-status">{status}</div>
             )}
         </>
     );
 }
 
 Login.layout = {
-    title: 'Log in to your account',
-    description: 'Enter your email and password below to log in',
+    title: 'Вход в аккаунт',
+    description: 'Введите email и пароль, чтобы войти',
 };

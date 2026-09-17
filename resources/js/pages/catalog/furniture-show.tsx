@@ -1,32 +1,25 @@
 import { Head, Link } from '@inertiajs/react';
 import { catalog } from '@/routes';
 import { category as catalogCategory } from '@/routes/catalog';
-import type { FurnitureDetailData, FurnitureSpecificationData } from '@/types';
+import FurnitureCard from '@/components/FurnitureCard';
+import { buildCharacteristics } from '@/lib/furniture-characteristics';
+import type { FurnitureCardData, FurnitureDetailData, FurnitureSpecificationData } from '@/types';
 
 type Props = {
     furniture: FurnitureDetailData;
     specifications: FurnitureSpecificationData | null;
+    related: FurnitureCardData[];
 };
 
-export default function FurnitureShow({ furniture, specifications }: Props) {
+export default function FurnitureShow({ furniture, specifications, related }: Props) {
     const { furniture: item } = furniture;
     const mainImage =
         furniture.images.find((image) => image.is_main)?.path_image ??
         furniture.images[0]?.path_image ??
         null;
 
-    const characteristics: Array<[string, string | null]> = [
-        ['Ширина, см', formatNumber(specifications?.width_cm)],
-        ['Длина, см', formatNumber(specifications?.length_cm)],
-        ['Высота, см', formatNumber(specifications?.height_cm)],
-        ['Механизм', specifications?.folding_type ?? null],
-        ['Вставки', specifications?.insert_type ?? null],
-        ['Материалы', specifications?.materials ?? null],
-        ['Покрытие', specifications?.surface ?? null],
-        ['Вес, кг', formatNumber(specifications?.weight_kg)],
-        ['Объём упаковки, м³', formatNumber(specifications?.package_volume_m3)],
-        ['Гарантия', specifications?.warranty ?? null],
-    ];
+    const characteristics = buildCharacteristics(specifications);
+    const hasSpecs = Object.values(characteristics).some((value) => value !== null);
 
     return (
         <>
@@ -95,34 +88,95 @@ export default function FurnitureShow({ furniture, specifications }: Props) {
                                 </span>
                             )}
                         </div>
+
+                        <section className="furniture-show__specs">
+                            <h2>Характеристики</h2>
+
+                            {hasSpecs ? (
+                                <table className="specs-table">
+                                    <tbody>
+                                        {Object.entries(characteristics).map(([label, value]) =>
+                                            value === null ? null : (
+                                                <tr key={label}>
+                                                    <th scope="row">{label}</th>
+                                                    <td>{value}</td>
+                                                </tr>
+                                            ),
+                                        )}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <p className="category__desc">
+                                    Характеристики для этого товара не указаны.
+                                </p>
+                            )}
+                        </section>
                     </div>
                 </div>
 
-                <section className="furniture-show__specs">
-                    <h2>Характеристики</h2>
+                {related.length > 0 ? (
+                    <section className="related">
+                        <div className="section-head">
+                            <h2>Похожие товары</h2>
+                            {furniture.category ? (
+                                <Link
+                                    href={catalogCategory({
+                                        category_id: furniture.category.category_id,
+                                    }).url}
+                                    className="section-head__all"
+                                >
+                                    Все товары категории →
+                                </Link>
+                            ) : (
+                                <Link href={catalog().url} className="section-head__all">
+                                    Весь каталог →
+                                </Link>
+                            )}
+                        </div>
 
-                    {specifications ? (
-                        <table className="specs-table">
-                            <tbody>
-                                {characteristics.map(([label, value]) =>
-                                    value === null ? null : (
-                                        <tr key={label}>
-                                            <th scope="row">{label}</th>
-                                            <td>{value}</td>
-                                        </tr>
-                                    ),
-                                )}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <p className="category__desc">Характеристики для этого товара не указаны.</p>
-                    )}
+                        <div className="products-grid products-grid--catalog">
+                            {related.map((card) => (
+                                <FurnitureCard
+                                    key={card.furniture.furniture_id}
+                                    card={card}
+                                />
+                            ))}
+                        </div>
+                    </section>
+                ) : null}
+
+                <section className="promo-grid">
+                    <div className="promo promo--sale">
+                        <div>
+                            <h3>Распродажа месяца — скидки до 30%</h3>
+                            <p>
+                                Сезонные скидки на спальни, кухни и мягкую мебель. Количество
+                                товаров по акции ограничено — успевайте выбрать мебель с выгодой.
+                            </p>
+                        </div>
+                        <ul className="promo__points">
+                            <li>До −30% на спальные гарнитуры</li>
+                            <li>Кухни со скидкой до 25%</li>
+                            <li>Диваны и кресла от 9 990 ₽</li>
+                        </ul>
+                    </div>
+
+                    <div className="promo promo--bonus">
+                        <div>
+                            <h3>Подарки и скидки покупателям</h3>
+                            <p>
+                                Дарим бонусы за заказы и балуем приятными подарками. Скидка
+                                действует на любой товар из каталога.
+                            </p>
+                        </div>
+                        <ul className="promo__points">
+                            <li>Промокод −10% на первый заказ</li>
+                            <li>Подарок к заказу от 25 000 ₽</li>
+                            <li>Бесплатная доставка от 30 000 ₽</li>
+                        </ul>
+                    </div>
                 </section>
             </div>
         </>
     );
-}
-
-function formatNumber(value: number | null | undefined): string | null {
-    return value === null || value === undefined ? null : String(value).replace('.', ',');
 }
