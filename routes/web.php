@@ -18,6 +18,9 @@ Route::get('/catalog/categories/{category_id}', [FurnitureController::class, 'in
 Route::get('/catalog/furniture/{furniture_id}', [FurnitureController::class, 'show'])
     ->whereNumber('furniture_id')
     ->name('catalog.furniture.show');
+Route::get('/catalog/categories/{category_id}/furniture', [FurnitureController::class, 'filter'])
+    ->whereNumber('category_id')
+    ->name('catalog.category.furniture');
 
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])
@@ -38,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware(['auth'])->prefix('cart')->name('cart.')->group(function () {
+    Route::get('/', [CartController::class, 'index'])->name('index');
     Route::post('add', [CartController::class, 'add'])->name('add');
     Route::post('items/{furniture_id}/increment', [CartController::class, 'increment'])
         ->whereNumber('furniture_id')

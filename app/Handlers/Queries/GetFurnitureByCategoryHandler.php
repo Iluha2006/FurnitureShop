@@ -25,6 +25,7 @@ final class GetFurnitureByCategoryHandler implements QueryHandlerInterface
             $queryInterface->categoryId,
             $queryInterface->perPage,
             $queryInterface->page,
+            $queryInterface->filter,
         );
     }
 }

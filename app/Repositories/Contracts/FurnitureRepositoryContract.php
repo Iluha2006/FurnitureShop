@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Contracts;
 
+use App\Data\Filter\FurnitureFilterData;
 use App\Data\FurnitureCardData;
 use App\Data\FurnitureDetailData;
 use App\Models\Furniture;
@@ -31,11 +32,25 @@ interface FurnitureRepositoryContract extends Repository
     public function getDetail(int $id): ?FurnitureDetailData;
 
     /**
-     * Get in-stock furniture that belongs to the given category.
+     * Get in-stock furniture that belongs to the given category, filtered and
+     * sorted per the characteristics.
      *
      * @return LengthAwarePaginator<int, FurnitureCardData>
      */
-    public function getByCategory(int $categoryId, int $perPage = 15, int $page = 1): LengthAwarePaginator;
+    public function getByCategory(
+        int $categoryId,
+        int $perPage = 15,
+        int $page = 1,
+        ?FurnitureFilterData $filter = null,
+    ): LengthAwarePaginator;
+
+    /**
+     * Get a short list of in-stock furniture from the given category,
+     * excluding the current item — used for the "Похожие товары" section.
+     *
+     * @return Collection<int, FurnitureCardData>
+     */
+    public function related(int $categoryId, int $excludeId, int $limit = 4): Collection;
 
     /**
      * Get a short list of in-stock furniture for the "Хиты продаж" section.

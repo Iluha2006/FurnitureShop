@@ -16,6 +16,7 @@ use App\Queries\GetFurnitureByCategoryQuery;
 use App\Queries\GetFurnitureHitsQuery;
 use App\Queries\GetFurnitureQuery;
 use App\Queries\GetFurnitureSpecificationsQuery;
+use App\Queries\GetRelatedFurnitureQuery;
 use App\Repositories\FurnitureSpecificationRepository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -203,6 +204,41 @@ test('category page returns only in-stock furniture of the requested category', 
     collect($result->items())->each(function ($item) use ($category) {
         expect($item->furniture->category_id)->toBe($category->category_id);
     });
+});
+
+test('related query returns in-stock items of the same category excluding the current one', function () {
+    $category = FurnitureCategory::factory()->create();
+    $current = Furniture::factory()->create([
+        'category_id' => $category->category_id,
+        'quantity' => 5,
+    ]);
+    Furniture::factory()->count(3)->create([
+        'category_id' => $category->category_id,
+        'quantity' => 5,
+    ]);
+    Furniture::factory()->create([
+        'category_id' => $category->category_id,
+        'quantity' => 0,
+    ]);
+    $otherCategory = FurnitureCategory::factory()->create();
+    Furniture::factory()->create([
+        'category_id' => $otherCategory->category_id,
+        'quantity' => 5,
+    ]);
+
+    $bus = app(QueryBusInterface::class);
+
+    $related = $bus->ask(new GetRelatedFurnitureQuery(
+        categoryId: $category->category_id,
+        excludeId: $current->furniture_id,
+    ));
+
+    expect($related)->toHaveCount(3);
+    expect($related->pluck('furniture.furniture_id'))
+        ->not->toContain($current->furniture_id);
+    expect($related->every(fn ($card) => $card->furniture->category_id === $category->category_id))
+        ->toBeTrue();
+    expect($related->every(fn ($card) => $card->furniture->quantity > 0))->toBeTrue();
 });
 
 test('furniture hits resolve in-stock items with a main image', function () {
