@@ -2,7 +2,9 @@
 
 namespace App\Data;
 
-readonly class TeamPermissions
+use Spatie\LaravelData\Data;
+
+class TeamPermissions extends Data
 {
     public function __construct(
         public bool $canUpdateTeam,

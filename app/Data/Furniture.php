@@ -2,4 +2,6 @@
 
 namespace App\Data;
 
-readonly class Furniture {}
+use Spatie\LaravelData\Data;
+
+class Furniture extends Data {}

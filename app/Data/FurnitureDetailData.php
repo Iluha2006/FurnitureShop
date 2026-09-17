@@ -5,16 +5,8 @@ namespace App\Data;
 use App\Models\Furniture;
 use App\Models\FurnitureImage;
 
-/**
- * A furniture item enriched with its relations, ready for the product page.
- * Specifications are intentionally NOT included — they live in a separate
- * repository and are fetched through a dedicated query.
- */
 readonly class FurnitureDetailData
 {
-    /**
-     * @param  list<FurnitureImageData>  $images
-     */
     public function __construct(
         public FurnitureData $furniture,
         public ?FurnitureCategoryData $category = null,

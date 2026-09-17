@@ -3,11 +3,9 @@
 namespace App\Data;
 
 use App\Models\Furniture;
+use Spatie\LaravelData\Data;
 
-/**
- * Lightweight projection used for furniture listings inside a category.
- */
-readonly class FurnitureCardData
+class FurnitureCardData extends Data
 {
     public function __construct(
         public FurnitureData $furniture,

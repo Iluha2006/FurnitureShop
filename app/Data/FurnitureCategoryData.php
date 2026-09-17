@@ -3,8 +3,9 @@
 namespace App\Data;
 
 use App\Models\FurnitureCategory;
+use Spatie\LaravelData\Data;
 
-readonly class FurnitureCategoryData
+class FurnitureCategoryData extends Data
 {
     public function __construct(
         public int $category_id,

@@ -5,8 +5,9 @@ namespace App\Data;
 use App\Models\FurnitureImage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Spatie\LaravelData\Data;
 
-readonly class FurnitureImageData
+class FurnitureImageData extends Data
 {
     public function __construct(
         public int $images_id,

@@ -9,113 +9,88 @@ use App\Models\FurnitureManufacturer;
 use App\Models\FurnitureSpecification;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Throwable;
 
 class FurnitureSeeder extends Seeder
 {
     use WithoutModelEvents;
 
     /**
-     * Flickr photo tags mapped by furniture name (comma = AND, pipe = OR).
+     * English furniture type keywords mapped by furniture category.
      *
      * @var array<string, string>
      */
-    private const SEARCH_KEYWORDS = [
-        // Комоды и тумбы
-        'Комод Мальта 5 ящиков' => 'dresser,white,bedroom',
-        'Комод Грация с зеркалом' => 'dresser,mirror,furniture',
-        'Тумба ТВ Верни 120' => 'television,stand',
-        // Мебель для детской комнаты
-        'Кровать детская Соня 80x160' => 'kids,bed,child',
-        'Стол школьника Юниор' => 'desk,school,kids',
-        'Комод детский Мишутка' => 'kids,dresser,children',
-        // Мебель для кухни
-        'Кухонный гарнитур Афина' => 'kitchen,cabinet,white',
-        'Обеденная группа Орфей' => 'dining,table,wood',
-        'Шкаф навесной для кухни Лира' => 'kitchen,cabinet,wall',
-        // Мебель для офиса
-        'Стол руководителя Атлант' => 'desk,office,executive',
-        'Кресло офисное Престиж' => 'office,chair,black',
-        'Шкаф для документов Бизнес' => 'filing,cabinet,office',
-        // Мебель для ванной комнаты
-        'Тумба под раковину Волна' => 'bathroom,vanity,sink',
-        'Пенал для ванной Альба' => 'bathroom,cabinet,tall',
-        // Мебель для спальни
-        'Кровать двуспальная Венеция 160x200' => 'double,bed,frame',
-        'Шкаф для спальни Флоренция' => 'wardrobe,bedroom,closet',
-        'Прикроватная тумба Лорен' => 'bedside,table',
-        // Стеллажи
-        'Стеллаж книжный Мадрид' => 'bookshelf,books,wood',
-        'Стеллаж открытый Модерн 4 полки' => 'shelf,open,unit',
-        'Стеллаж угловой Венеция' => 'corner,shelf,bookcase',
-        // Прихожие
-        'Прихожая Камелия' => 'hallway,bench,coat',
-        'Прихожая Эдем с зеркалом' => 'hallway,wardrobe,mirror',
-        // Стенки для гостиной
-        'Стенка гостиная Монте-Карло' => 'tv,wall,cabinet',
-        'Стенка модульная Белла' => 'living,room,cabinet',
-        // Столы
-        'Стол обеденный Классика 120x80' => 'dining,table,wood',
-        'Стол журнальный Прованс' => 'coffee,table,white',
-        'Стол компьютерный Грация' => 'computer,desk',
-        'Стол раскладной Дельфин' => 'folding,table,wood',
-        // Шкафы-купе
-        'Шкаф-купе Трио с зеркалом' => 'wardrobe,mirror,sliding',
-        'Шкаф-купе Стелла 3 двери' => 'wardrobe,sliding',
-        'Шкаф-купе угловой Милан' => 'corner,wardrobe,closet',
-        // Раздвижные двери
-        'Дверь раздвижная Стекло Мат' => 'sliding,glass,door',
-        'Дверь-купе Зеркало Венеция' => 'mirrored,sliding,door',
-        // Товары для дома
-        'Вешалка напольная Рига' => 'coat,rack,wood',
-        'Зеркало напольное Арлекин' => 'mirror,full,length',
-        // Матрасы
-        'Матрас Ортопед Люкс 160x200' => 'mattress,bed,orthopedic',
-        'Матрас Дабл Пружинный 90x200' => 'mattress,spring,bed',
-        'Матрас детский Кокос 80x160' => 'kids,mattress,child',
-        'Матрас Мемори 140x200' => 'mattress,memory,foam',
-        // Диваны
-        'Диван Модерн трёхместный' => 'sofa,modern,grey',
-        'Диван Классика с подлокотниками' => 'sofa,classic,beige',
-        'Диван-кровать Уют еврокнижка' => 'sofa,bed,convertible',
-        'Диван угловой Гостиная' => 'corner,sofa,sectional',
-        'Диван Компакт Аккордеон' => 'sofa,compact,living',
-        // Кресла
-        'Кресло Классик для отдыха' => 'armchair,lounge,comfort',
-        'Кресло-кровать Дельфин' => 'armchair,convertible,bed',
-        'Кресло-качалка Мечта' => 'rocking,chair,wood',
-        // Пуфы
-        'Пуф квадратный Вельвет' => 'ottoman,pink,velvet',
-        'Пуф-банкетка с ящиком' => 'ottoman,storage,bench',
-        'Пуф круглый Кокос' => 'ottoman,round,pouf',
+    private const CATEGORY_EN = [
+        'Комоды и тумбы' => 'chest of drawers, elegant dresser',
+        'Мебель для детской комнаты' => 'kids room furniture, children bedroom furniture',
+        'Мебель для кухни' => 'kitchen furniture, kitchen cabinet set',
+        'Мебель для офиса' => 'office furniture, executive furniture',
+        'Мебель для ванной комнаты' => 'bathroom furniture, waterproof vanity unit',
+        'Мебель для спальни' => 'bedroom furniture',
+        'Стеллажи' => 'bookcase, shelving unit, bookshelf',
+        'Прихожие' => 'hallway furniture, entryway console with coat rack',
+        'Стенки для гостиной' => 'living room wall unit, media center cabinet',
+        'Столы' => 'table',
+        'Шкафы-купе' => 'sliding door wardrobe',
+        'Раздвижные двери' => 'sliding glass door',
+        'Товары для дома' => 'home furniture, home accessory',
+        'Матрасы' => 'mattress',
+        'Диваны' => 'sofa, couch',
+        'Кресла' => 'armchair, cozy chair',
+        'Пуфы' => 'ottoman, pouf, accent stool',
     ];
 
     /**
-     * Fallback tags by furniture category.
+     * English color names mapped from Russian.
      *
      * @var array<string, string>
      */
-    private const CATEGORY_TAGS = [
-        'Комоды и тумбы' => 'dresser,bedroom,furniture',
-        'Мебель для детской комнаты' => 'kids,bedroom,furniture',
-        'Мебель для кухни' => 'kitchen,furniture,modern',
-        'Мебель для офиса' => 'office,furniture,desk',
-        'Мебель для ванной комнаты' => 'bathroom,furniture,modern',
-        'Мебель для спальни' => 'bedroom,furniture,modern',
-        'Стеллажи' => 'shelf,bookcase,wood',
-        'Прихожие' => 'hallway,furniture,entry',
-        'Стенки для гостиной' => 'living,room,furniture',
-        'Столы' => 'table,wood,furniture',
-        'Шкафы-купе' => 'wardrobe,closet,sliding',
-        'Раздвижные двери' => 'sliding,door,interior',
-        'Товары для дома' => 'home,decor,room',
-        'Матрасы' => 'mattress,bed,sleep',
-        'Диваны' => 'sofa,couch,living',
-        'Кресла' => 'armchair,lounge,chair',
-        'Пуфы' => 'ottoman,pouf,stool',
+    private const COLOR_EN = [
+        'Белый' => 'white',
+        'Бежевый' => 'beige',
+        'Венге' => 'wenge dark brown',
+        'Дуб сонома' => 'sonoma oak wood',
+        'Графит' => 'graphite gray',
+        'Орех' => 'walnut wood',
+        'Дуб' => 'oak wood',
+        'Серый' => 'gray',
+        'Чёрный' => 'black',
+        'Зелёный' => 'green',
+        'Синий' => 'blue',
+        'Розовый' => 'pink',
+        'Коричневый' => 'brown',
+    ];
+
+    /**
+     * English material names mapped from Russian.
+     *
+     * @var array<string, string>
+     */
+    private const MATERIAL_EN = [
+        'ЛДСП' => 'laminated chipboard',
+        'МДФ' => 'MDF board',
+        'Массив сосны' => 'solid pine wood',
+        'Массив бука' => 'solid beech wood',
+        'Массив берёзы' => 'solid birch wood',
+        'Влагостойкий МДФ' => 'moisture-resistant MDF',
+        'Экокожа' => 'eco-leather',
+        'Велюр' => 'velvet fabric',
+        'Рогожка' => 'linen weave fabric',
+        'Флок' => 'flock fabric',
+        'Шенилл' => 'chenille fabric',
+        'Латекс, хлопок' => 'latex and cotton',
+        'Войлок, ППУ' => 'felt and polyurethane foam',
+        'Кокосовая койра' => 'coconut coir',
+        'Пена Memory' => 'memory foam',
+        'Вельвет, ППУ' => 'velvet and polyurethane foam',
+        'Экокожа, фанера' => 'eco-leather and plywood',
+        'Рогожка, ППУ' => 'linen fabric and polyurethane foam',
+        'Металл' => 'steel metal',
+        'Алюминий' => 'aluminum',
+        'Стекло' => 'glass',
     ];
 
     /**
@@ -775,40 +750,30 @@ class FurnitureSeeder extends Seeder
             $furniture->update(['specifications_id' => $spec->id]);
 
             $furniture->images()->delete();
-            $this->seedImages($furniture, $item['name'], $item['images']);
+            $this->seedImages($furniture, $item, $item['images']);
         }
     }
 
     /**
-     * Download real photos from Loremflickr (Flickr, no API key) by furniture tags.
+     * Generate furniture photos with OpenAI DALL-E 3 and persist them.
+     *
+     * @param  array<string, mixed>  $item
      */
-    private function seedImages(Furniture $furniture, string $name, int $count): void
+    private function seedImages(Furniture $furniture, array $item, int $count): void
     {
-        $tags = self::SEARCH_KEYWORDS[$name] ?? self::CATEGORY_TAGS[$furniture->category?->name] ?? 'furniture';
+        $slug = $this->slug($item['name']);
 
-        foreach (range(1, $count) as $index) {
-            $url = 'https://loremflickr.com/800/600/'.urlencode($tags);
+        for ($index = 0; $index < $count; $index++) {
+            $prompt = $this->buildPrompt($item, $index + 1);
+            $imageData = $this->generateWithDalle($prompt);
 
-            try {
-                $response = Http::timeout(30)
-                    ->retry(3, 1500)
-                    ->get($url);
-
-                $imageData = $response->body();
-            } catch (RequestException $e) {
-                $this->seedFallbackSvg($furniture, $name, $count);
+            if ($imageData === null || $imageData === '') {
+                $this->seedFallbackSvg($furniture, $item['name'], $count);
 
                 return;
             }
 
-            if ($imageData === '' || strlen($imageData) < 500) {
-                $this->seedFallbackSvg($furniture, $name, $count);
-
-                return;
-            }
-
-            $slug = $this->slug($name);
-            $filename = "{$slug}-{$index}.jpg";
+            $filename = "{$slug}-".($index + 1).'.png';
             $path = "furniture/{$filename}";
 
             Storage::disk('public')->put($path, $imageData);
@@ -816,19 +781,185 @@ class FurnitureSeeder extends Seeder
             FurnitureImage::create([
                 'furniture_id' => $furniture->furniture_id,
                 'path_image' => $path,
-                'is_main' => $index === 1,
+                'is_main' => $index === 0,
             ]);
+
+            sleep(2);
         }
     }
 
     /**
-     * SVG placeholder when Loremflickr is unreachable.
+     * Build a detailed English prompt that accurately describes the furniture piece.
+     *
+     * @param  array<string, mixed>  $item
+     */
+    private function buildPrompt(array $item, int $viewIndex): string
+    {
+        $categoryName = $item['category'];
+        $categoryEn = self::CATEGORY_EN[$categoryName] ?? 'modern furniture';
+        $colorEn = self::COLOR_EN[$item['color'] ?? ''] ?? 'natural wood';
+        $materialsEn = self::MATERIAL_EN[$item['spec']['materials'] ?? ''] ?? 'quality materials';
+        $angles = ['front view', 'three-quarter angle', 'side view'];
+        $angle = $angles[$viewIndex - 1] ?? $angles[0];
+        $furnitureName = $this->toEnglishName($item['name']);
+
+        return "Professional e-commerce product photograph of {$furnitureName}, "
+            ."a {$colorEn} {$categoryEn}"
+            .", made of {$materialsEn}"
+            .". {$categoryName} style furniture. {$item['description']}"
+            ." {$angle}"
+            .'. Studio lighting, clean light-gray seamless background, centered composition, '
+            .'subtle realistic shadow, ultra-detailed, sharp focus, full item fully visible, '
+            .'no people, no text, no watermark, no labels.';
+    }
+
+    /**
+     * Translate a furniture keyword to its English equivalent.
+     */
+    private function translateFurnitureType(string $type): string
+    {
+        $map = [
+            'Комод' => 'chest of drawers',
+            'Тумба' => 'cabinet',
+            'Кровать' => 'bed',
+            'Стол' => 'table',
+            'Шкаф' => 'wardrobe',
+            'Диван' => 'sofa',
+            'Кресло' => 'armchair',
+            'Пуф' => 'ottoman',
+            'Матрас' => 'mattress',
+            'Стеллаж' => 'bookshelf',
+            'Прихожая' => 'hallway console',
+            'Зеркало' => 'floor mirror',
+            'Вешалка' => 'coat rack',
+            'Стенка' => 'wall unit',
+            'Дверь' => 'sliding door',
+            'Пенал' => 'tall cabinet',
+            'Гарнитур' => 'kitchen set',
+            'Группа' => 'dining set',
+        ];
+
+        foreach ($map as $russian => $english) {
+            if (str_starts_with($type, $russian)) {
+                return $english;
+            }
+        }
+
+        return 'furniture piece';
+    }
+
+    /**
+     * Transliterate a Russian furniture name into an English brand-style name.
+     *
+     * Recognized model names are kept, otherwise each Cyrillic word is mapped
+     * against a small phrase dictionary to preserve the meaning.
+     */
+    private function toEnglishName(string $name): string
+    {
+        $known = [
+            'Комод Мальта 5 ящиков' => 'Malta chest of drawers with five drawers',
+            'Комод Грация с зеркалом' => 'Grazia chest of drawers with mirror',
+            'Тумба ТВ Верни 120' => 'Verni TV console 120 cm',
+            'Кровать детская Соня 80x160' => 'Sonya kids bed 80x160',
+            'Стол школьника Юниор' => 'Junior student desk',
+            'Комод детский Мишутка' => 'Mishutka kids chest of drawers',
+            'Кухонный гарнитур Афина' => 'Afina kitchen set',
+            'Обеденная группа Орфей' => 'Orpheus dining set with chairs',
+            'Шкаф навесной для кухни Лира' => 'Lira wall kitchen cabinet',
+            'Стол руководителя Атлант' => 'Atlant executive office desk',
+            'Кресло офисное Престиж' => 'Prestige office chair',
+            'Шкаф для документов Бизнес' => 'Biznes document cabinet',
+            'Тумба под раковину Волна' => 'Volna bathroom vanity with sink',
+            'Пенал для ванной Альба' => 'Alba tall bathroom cabinet',
+            'Кровать двуспальная Венеция 160x200' => 'Venice double bed 160x200',
+            'Шкаф для спальни Флоренция' => 'Florence bedroom wardrobe',
+            'Прикроватная тумба Лорен' => 'Loren nightstand',
+            'Стеллаж книжный Мадрид' => 'Madrid bookcase',
+            'Стеллаж открытый Модерн 4 полки' => 'Modern open shelving unit with four shelves',
+            'Стеллаж угловой Венеция' => 'Venice corner bookshelf',
+            'Прихожая Камелия' => 'Camellia hallway set with coat rack',
+            'Прихожая Эдем с зеркалом' => 'Eden hallway set with mirror',
+            'Стенка гостиная Монте-Карло' => 'Monte-Carlo living room wall unit',
+            'Стенка модульная Белла' => 'Bella modular wall unit',
+            'Стол обеденный Классика 120x80' => 'Classic dining table 120x80',
+            'Стол журнальный Прованс' => 'Provence coffee table',
+            'Стол компьютерный Грация' => 'Grazia computer desk',
+            'Стол раскладной Дельфин' => 'Dolphin folding table',
+            'Шкаф-купе Трио с зеркалом' => 'Trio sliding wardrobe with mirror',
+            'Шкаф-купе Стелла 3 двери' => 'Stella three-door sliding wardrobe',
+            'Шкаф-купе угловой Милан' => 'Milan corner sliding wardrobe',
+            'Дверь раздвижная Стекло Мат' => 'Frosted glass sliding door',
+            'Дверь-купе Зеркало Венеция' => 'Venice mirrored sliding door',
+            'Вешалка напольная Рига' => 'Riga freestanding coat rack',
+            'Зеркало напольное Арлекин' => 'Harlequin full-length floor mirror',
+            'Матрас Ортопед Люкс 160x200' => 'Orthoped Lux orthopedic mattress 160x200',
+            'Матрас Дабл Пружинный 90x200' => 'Double spring mattress 90x200',
+            'Матрас детский Кокос 80x160' => 'Cocos kids coconut mattress 80x160',
+            'Матрас Мемори 140x200' => 'Memory foam mattress 140x200',
+            'Диван Модерн трёхместный' => 'Modern three-seat sofa',
+            'Диван Классика с подлокотниками' => 'Classic sofa with armrests',
+            'Диван-кровать Уют еврокнижка' => 'Uyut sofa-bed eurolift',
+            'Диван угловой Гостиная' => 'L-shaped corner sofa',
+            'Диван Компакт Аккордеон' => 'Compact accordion sofa-bed',
+            'Кресло Классик для отдыха' => 'Classic lounge armchair',
+            'Кресло-кровать Дельфин' => 'Dolphin armchair bed',
+            'Кресло-качалка Мечта' => 'Mechta wooden rocking chair',
+            'Пуф квадратный Вельвет' => 'Square velvet pouf',
+            'Пуф-банкетка с ящиком' => 'Storage ottoman bench',
+            'Пуф круглый Кокос' => 'Round Cocos pouf',
+        ];
+
+        return $known[$name] ?? 'modern '.$this->translateFurnitureType($name);
+    }
+
+    /**
+     * Request an image from the OpenAI DALL-E 3 API.
+     */
+    private function generateWithDalle(string $prompt): ?string
+    {
+        $apiKey = config('services.openai.api_key');
+
+        if (blank($apiKey) || $apiKey === 'your_openai_api_key_here') {
+            return null;
+        }
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout(120)
+                ->retry(3, 2000)
+                ->post('https://api.openai.com/v1/images/generations', [
+                    'model' => 'dall-e-3',
+                    'prompt' => $prompt,
+                    'n' => 1,
+                    'size' => '1024x1024',
+                    'quality' => 'standard',
+                    'response_format' => 'b64_json',
+                ]);
+        } catch (Throwable) {
+            return null;
+        }
+
+        if ($response->failed()) {
+            return null;
+        }
+
+        $base64 = data_get($response->json(), 'data.0.b64_json');
+
+        if (! is_string($base64) || $base64 === '') {
+            return null;
+        }
+
+        return base64_decode($base64, true) ?: null;
+    }
+
+    /**
+     * SVG placeholder when the image generation API is unavailable or misconfigured.
      */
     private function seedFallbackSvg(Furniture $furniture, string $name, int $count): void
     {
         $base = $this->slug($name);
         $color = self::COLOR_HEX[$furniture->color] ?? '#a08c7a';
-        $category = $furniture->category?->name ?? 'Мебель';
+        $category = $furniture->category->name ?? 'Мебель';
 
         foreach (range(1, $count) as $index) {
             $path = "furniture/{$base}-{$index}.svg";

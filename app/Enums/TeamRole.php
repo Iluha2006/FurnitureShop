@@ -8,8 +8,6 @@ enum TeamRole: string
     case Admin = 'admin';
     case Member = 'member';
 
-
-
     /**
      * Get the display label for the role.
      */

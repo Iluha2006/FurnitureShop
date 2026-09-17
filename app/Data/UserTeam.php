@@ -2,7 +2,9 @@
 
 namespace App\Data;
 
-readonly class UserTeam
+use Spatie\LaravelData\Data;
+
+class UserTeam extends Data
 {
     public function __construct(
         public int $id,

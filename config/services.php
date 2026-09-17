@@ -23,7 +23,16 @@ return [
     ],
 
     'pexels' => [
-        'key' => env('PEXELS_API_KEY'),
+        'key' => env('YANDEX_SEARCH_API_KEY'),
+    ],
+
+    'yandex' => [
+        'search_api_key' => env('YANDEX_SEARCH_API_KEY'),
+        'folder_id' => env('YANDEX_FOLDER_ID'),
+    ],
+
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
     ],
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),

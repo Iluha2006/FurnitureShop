@@ -3,8 +3,9 @@
 namespace App\Data;
 
 use App\Models\FurnitureSpecification;
+use Spatie\LaravelData\Data;
 
-readonly class FurnitureSpecificationData
+class FurnitureSpecificationData extends Data
 {
     public function __construct(
         public int $id,
