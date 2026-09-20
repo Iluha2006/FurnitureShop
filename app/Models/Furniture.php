@@ -2,34 +2,13 @@
 
 namespace App\Models;
 
+use App\Search\Searchable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
-/**
- * @property int $furniture_id
- * @property string $name
- * @property string|null $description
- * @property string|null $color
- * @property string $price
- * @property int $quantity
- * @property int|null $manufacturer_id
- * @property int $category_id
- * @property int|null $specifications_id
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property-read FurnitureCategory|null $category
- * @property-read FurnitureManufacturer|null $manufacturer
- * @property-read FurnitureSpecification|null $specification
- * @property-read Collection<int, FurnitureImage> $images
- * @property-read Collection<int, CartItem> $cartItems
- * @property-read Collection<int, OrderItem> $orderItems
- * @property-read Collection<int, Favorite> $favorites
- */
 #[Fillable([
     'name',
     'description',
@@ -43,6 +22,7 @@ use Illuminate\Support\Carbon;
 class Furniture extends Model
 {
     use HasFactory;
+    use Searchable;
 
     protected $primaryKey = 'furniture_id';
 

@@ -9,7 +9,12 @@ use App\Queries\GetFurnitureByCategoryQuery;
 use App\Queries\GetFurnitureFilterOptionsQuery;
 use App\Queries\GetFurnitureQuery;
 use App\Queries\GetFurnitureSpecificationsQuery;
+use App\Queries\GetRelatedFurnitureQuery;
+use App\Queries\SearchFurnitureQuery;
+use Elastic\Elasticsearch\Exception\ElasticsearchException;
+use Elastic\Transport\Exception\TransportException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -41,10 +46,35 @@ class FurnitureController extends Controller
             new GetFurnitureSpecificationsQuery(furnitureId: $furnitureId),
         );
 
+        $related = $this->queryBus->ask(
+            new GetRelatedFurnitureQuery(
+                categoryId: $furniture->furniture->category_id,
+                excludeId: $furnitureId,
+            ),
+        );
+
         return Inertia::render('catalog/furniture-show', [
             'furniture' => $furniture,
             'specifications' => $specifications,
+            'related' => $related,
         ]);
+    }
+
+    public function searchApi(Request $request): JsonResponse
+    {
+        $query = $request->string('q')->trim()->toString();
+
+        if ($query === '') {
+            return response()->json([]);
+        }
+
+        try {
+            $result = $this->queryBus->ask(new SearchFurnitureQuery($query));
+        } catch (ElasticsearchException|TransportException) {
+            $result = new Collection;
+        }
+
+        return response()->json($result);
     }
 
     private function catalogPageProps(int $categoryId, Request $request): array

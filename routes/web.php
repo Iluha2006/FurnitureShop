@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/catalog', [FurnitureCategoryController::class, 'index'])->name('catalog');
+Route::get('/catalog/search', [FurnitureController::class, 'search'])->name('catalog.search');
 Route::get('/catalog/categories/{category_id}', [FurnitureController::class, 'index'])
     ->whereNumber('category_id')
     ->name('catalog.category');
