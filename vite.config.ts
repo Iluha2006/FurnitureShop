@@ -29,6 +29,11 @@ export default defineConfig({
         }),
     ]),
     server: {
+        host: '0.0.0.0',
+        port: 5173,
+        hmr: {
+            host: 'localhost',
+        },
         watch: {
             ignored: [
                 '**/.agents/**',
@@ -36,6 +41,7 @@ export default defineConfig({
                 '**/.cursor/**',
                 '**/.junie/**',
                 '**/vendor/**',
+                '**/public/build/**',
             ],
         },
     },
