@@ -1,17 +1,32 @@
 import { Head, Link } from '@inertiajs/react';
 import { catalog } from '@/routes';
-import { category as catalogCategory } from '@/routes/catalog';
 import FurnitureCard from '@/components/FurnitureCard';
-import type { FurnitureCardData, Paginator } from '@/types';
+import CatalogFilter from '@/components/catalog-filter';
+import type {
+    FurnitureCardData,
+    FurnitureFilterData,
+    FurnitureFilterOptionsData,
+    Paginator,
+} from '@/types';
 
 type Props = {
     categoryId: number;
     categories: { category_id: number; name: string }[];
     furniture: Paginator<FurnitureCardData>;
+    filterOptions: FurnitureFilterOptionsData;
+    activeFilter: FurnitureFilterData | null;
 };
 
-export default function FurnitureByCategory({ categoryId, categories, furniture }: Props) {
-    const currentCategory = categories.find((category) => category.category_id === categoryId);
+export default function FurnitureByCategory({
+    categoryId,
+    categories,
+    furniture,
+    filterOptions,
+    activeFilter,
+}: Props) {
+    const currentCategory = categories.find(
+        (category) => category.category_id === categoryId,
+    );
 
     return (
         <>
@@ -26,9 +41,7 @@ export default function FurnitureByCategory({ categoryId, categories, furniture 
 
                 <section className="category__head">
                     <h1>
-                        <span className="category__head-icon" aria-hidden="true">
-                            ▦
-                        </span>
+                       
                         {currentCategory?.name ?? 'Категория'}
                     </h1>
                     <p className="category__desc">
@@ -40,36 +53,20 @@ export default function FurnitureByCategory({ categoryId, categories, furniture 
                 </section>
 
                 <div className="category__layout">
-                    <aside className="sidebar" aria-label="Категории">
-                        <h2 className="sidebar__title">Каталог</h2>
-                        <nav className="sidebar__nav">
-                            {categories.map((category) => {
-                                const active = category.category_id === categoryId;
-
-                                return (
-                                    <Link
-                                        key={category.category_id}
-                                        href={catalogCategory({ category_id: category.category_id }).url}
-                                        className={
-                                            'sidebar__link' + (active ? ' sidebar__link--active' : '')
-                                        }
-                                    >
-                                        <span className="sidebar__icon" aria-hidden="true">
-                                            ›
-                                        </span>
-                                        <span className="sidebar__name">{category.name}</span>
-                                        {active && <span className="sidebar__arrow">→</span>}
-                                    </Link>
-                                );
-                            })}
-                        </nav>
-                    </aside>
+                    <CatalogFilter
+                        categoryId={categoryId}
+                        options={filterOptions}
+                        active={activeFilter}
+                    />
 
                     <section className="catalog">
                         {furniture.data.length > 0 ? (
                             <div className="products-grid products-grid--catalog">
                                 {furniture.data.map((card) => (
-                                    <FurnitureCard key={card.furniture.furniture_id} card={card} />
+                                    <FurnitureCard
+                                        key={card.furniture.furniture_id}
+                                        card={card}
+                                    />
                                 ))}
                             </div>
                         ) : (
@@ -81,15 +78,22 @@ export default function FurnitureByCategory({ categoryId, categories, furniture 
                         {furniture.last_page > 1 && (
                             <div className="catalog__more">
                                 {furniture.prev_page_url ? (
-                                    <a href={furniture.prev_page_url} className="btn btn--outline">
+                                    <a
+                                        href={furniture.prev_page_url}
+                                        className="btn btn--outline"
+                                    >
                                         ← Назад
                                     </a>
                                 ) : null}
                                 <span className="catalog-pagination">
-                                    Страница {furniture.current_page} из {furniture.last_page}
+                                    Страница {furniture.current_page} из{' '}
+                                    {furniture.last_page}
                                 </span>
                                 {furniture.next_page_url ? (
-                                    <a href={furniture.next_page_url} className="btn btn--primary">
+                                    <a
+                                        href={furniture.next_page_url}
+                                        className="btn btn--primary"
+                                    >
                                         Далее →
                                     </a>
                                 ) : null}

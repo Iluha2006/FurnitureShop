@@ -55,6 +55,42 @@ export type FurnitureSpecificationData = {
     warranty: string | null;
 };
 
+export type FilterOptionData = {
+    value: string;
+    label: string;
+};
+
+export type FilterRangeData = {
+    min_cm: number;
+    max_cm: number;
+};
+
+export type FurnitureFilterOptionsData = {
+    price_range: FilterRangeData;
+    widthRangeData: FilterRangeData;
+    heightRangeData: FilterRangeData;
+    lengthRangeData: FilterRangeData;
+    folding_type: FilterOptionData[];
+    surface: FilterOptionData[];
+    materials: FilterOptionData[];
+    manufacture: FilterOptionData[];
+};
+
+export type FurnitureFilterData = {
+    price_min: number | null;
+    price_max: number | null;
+    width_min: number | null;
+    width_max: number | null;
+    height_min: number | null;
+    height_max: number | null;
+    length_min: number | null;
+    length_max: number | null;
+    foldingType: string[] | null;
+    surface: string[] | null;
+    materials: string[] | null;
+    manufacture: string[] | null;
+};
+
 export type PaginatorLink = {
     url: string | null;
     label: string;
