@@ -107,6 +107,54 @@ services:
     networks:
       - archiweb
 
+  # Logstash: receives logs from Filebeat (beats -> 5044) and ships them to ES.
+  logstash:
+    image: docker.elastic.co/logstash/logstash:9.5.0
+    restart: unless-stopped
+    volumes:
+      - ./docker/logs/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./docker/logs/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+    ports:
+      - "5044:5044"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - archiweb
+
+  # Kibana: web UI for exploring logs and dashboards (http://localhost:5601).
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.5.0
+    restart: unless-stopped
+    environment:
+      - SERVER_HOST=0.0.0.0
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - archiweb
+
+  # Filebeat: tails the JSON logs of every container (stdout/stderr of php-fpm
+  # and nginx) and forwards them to Logstash on port 5044.
+  filebeat:
+    build:
+      context: ./docker/logs
+      dockerfile: Dockerfile_filebeat
+    image: archiweb-filebeat:latest
+    restart: unless-stopped
+    user: root
+    volumes:
+      - ./docker/logs/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - logstash
+    networks:
+      - archiweb
+
 volumes:
   pgdata:
   esdata:
