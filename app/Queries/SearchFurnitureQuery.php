@@ -13,6 +13,7 @@ final class SearchFurnitureQuery implements QueryInterface
 {
     public function __construct(
         public readonly string $q,
+        public readonly int $limit = 100,
     ) {
         //
     }

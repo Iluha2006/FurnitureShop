@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Data\Filter\FurnitureFilterData;
+use App\Data\FurnitureCategoryData;
 use App\Interfaces\QueryBusInterface;
+use App\Models\FurnitureCategory;
 use App\Queries\GetCategoriesQuery;
 use App\Queries\GetFurnitureByCategoryQuery;
 use App\Queries\GetFurnitureFilterOptionsQuery;
@@ -65,16 +67,29 @@ class FurnitureController extends Controller
         $query = $request->string('q')->trim()->toString();
 
         if ($query === '') {
-            return response()->json([]);
+            return response()->json([
+                'categories' => [],
+                'furniture' => [],
+            ]);
         }
+
+        $categories = FurnitureCategory::query()
+            ->where('name', 'ilike', "%{$query}%")
+            ->orderBy('name')
+            ->get()
+            ->map(fn (FurnitureCategory $category) => FurnitureCategoryData::fromModel($category))
+            ->all();
 
         try {
-            $result = $this->queryBus->ask(new SearchFurnitureQuery($query));
+            $furniture = $this->queryBus->ask(new SearchFurnitureQuery($query));
         } catch (ElasticsearchException|TransportException) {
-            $result = new Collection;
+            $furniture = new Collection;
         }
 
-        return response()->json($result);
+        return response()->json([
+            'categories' => $categories,
+            'furniture' => $furniture,
+        ]);
     }
 
     private function catalogPageProps(int $categoryId, Request $request): array

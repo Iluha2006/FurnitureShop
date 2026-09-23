@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/catalog', [FurnitureCategoryController::class, 'index'])->name('catalog');
-Route::get('/catalog/search', [FurnitureController::class, 'search'])->name('catalog.search');
 Route::get('/catalog/categories/{category_id}', [FurnitureController::class, 'index'])
     ->whereNumber('category_id')
     ->name('catalog.category');
@@ -22,6 +21,9 @@ Route::get('/catalog/furniture/{furniture_id}', [FurnitureController::class, 'sh
 Route::get('/catalog/categories/{category_id}/furniture', [FurnitureController::class, 'filter'])
     ->whereNumber('category_id')
     ->name('catalog.category.furniture');
+
+Route::get('/api/search', [FurnitureController::class, 'searchApi'])
+    ->name('api.search');
 
 Route::prefix('{current_team}')
     ->middleware(['auth', 'verified', EnsureTeamMembership::class])

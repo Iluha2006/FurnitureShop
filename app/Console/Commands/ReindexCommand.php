@@ -62,9 +62,11 @@ class ReindexCommand extends Command
                         'furniture_id' => ['type' => 'long'],
                         'name' => [
                             'type' => 'text',
+                            'analyzer' => 'russian',
                             'fields' => ['keyword' => ['type' => 'keyword', 'ignore_above' => 256]],
                         ],
-                        'description' => ['type' => 'text'],
+                        'description' => ['type' => 'text', 'analyzer' => 'russian'],
+                        'category_name' => ['type' => 'text', 'analyzer' => 'russian'],
                         'color' => ['type' => 'keyword'],
                         'price' => ['type' => 'double'],
                         'quantity' => ['type' => 'integer'],

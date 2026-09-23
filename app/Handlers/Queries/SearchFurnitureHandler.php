@@ -25,7 +25,7 @@ final class SearchFurnitureHandler implements QueryHandlerInterface
         }
 
         return $this->elasticsearchRepository
-            ->search($queryInterface->q)
+            ->search($queryInterface->q, $queryInterface->limit)
             ->map(fn (Furniture $furniture) => FurnitureCardData::fromModel($furniture));
     }
 }

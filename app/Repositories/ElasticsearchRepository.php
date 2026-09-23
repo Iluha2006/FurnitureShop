@@ -32,7 +32,7 @@ class ElasticsearchRepository
             'body' => [
                 'query' => [
                     'multi_match' => [
-                        'fields' => ['name^5', 'description', 'color'],
+                        'fields' => ['name^5', 'category_name^3', 'description', 'color'],
                         'query' => $query,
                     ],
                 ],

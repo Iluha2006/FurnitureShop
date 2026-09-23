@@ -60,4 +60,12 @@ class Furniture extends Model
     {
         return $this->hasMany(Favorite::class, 'furniture_id', 'furniture_id');
     }
+
+    public function toSearchArray(): array
+    {
+        return [
+            ...$this->toArray(),
+            'category_name' => $this->category?->name,
+        ];
+    }
 }
