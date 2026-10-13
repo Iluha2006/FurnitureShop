@@ -15,7 +15,6 @@ export default function AuthStorefrontLayout({
                     <span className="logo__mark">М</span>
                     <span className="logo__text">
                         <strong>МебельДом</strong>
-                        <small>корпусная и мягкая мебель</small>
                     </span>
                 </Link>
 

@@ -16,10 +16,23 @@ return [
     */
 
     'ssr' => [
-        'enabled' => true,
-        'url' => 'http://127.0.0.1:13714',
-        // 'bundle' => base_path('bootstrap/ssr/ssr.mjs'),
+        'enabled' => (bool) env('INERTIA_SSR_ENABLED', true),
 
+        'runtime' => env('INERTIA_SSR_RUNTIME', 'node'),
+
+        'ensure_runtime_exists' => (bool) env('INERTIA_SSR_ENSURE_RUNTIME_EXISTS', false),
+
+        'url' => env('INERTIA_SSR_URL', 'http://127.0.0.1:13714'),
+
+        // Dev only: the URL Laravel posts SSR requests to. Defaults to the Vite
+        // dev server URL from public/hot, which is unreachable from inside the
+        // app container, so Docker needs an explicit value.
+        'hot_url' => env('INERTIA_SSR_HOT_URL'),
+
+        'ensure_bundle_exists' => (bool) env('INERTIA_SSR_ENSURE_BUNDLE_EXISTS', true),
+
+        // Left unset so Inertia auto-detects bootstrap/ssr/app.js.
+        // 'bundle' => base_path('bootstrap/ssr/app.js'),
     ],
 
     /*

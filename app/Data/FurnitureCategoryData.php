@@ -10,6 +10,7 @@ class FurnitureCategoryData extends Data
     public function __construct(
         public int $category_id,
         public string $name,
+        public ?string $image_url = null,
     ) {
         //
     }
@@ -19,6 +20,7 @@ class FurnitureCategoryData extends Data
         return new self(
             category_id: $category->category_id,
             name: $category->name,
+            image_url: $category->image_url,
         );
     }
 }

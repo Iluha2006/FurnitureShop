@@ -1,9 +1,15 @@
+import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { catalog } from '@/routes';
 import { category as catalogCategory } from '@/routes/catalog';
+import CartAction from '@/components/cart-action';
 import FurnitureCard from '@/components/FurnitureCard';
 import { buildCharacteristics } from '@/lib/furniture-characteristics';
-import type { FurnitureCardData, FurnitureDetailData, FurnitureSpecificationData } from '@/types';
+import type {
+    FurnitureCardData,
+    FurnitureDetailData,
+    FurnitureSpecificationData,
+} from '@/types';
 
 type Props = {
     furniture: FurnitureDetailData;
@@ -11,15 +17,38 @@ type Props = {
     related: FurnitureCardData[];
 };
 
-export default function FurnitureShow({ furniture, specifications, related }: Props) {
+export default function FurnitureShow({
+    furniture,
+    specifications,
+    related,
+}: Props) {
     const { furniture: item } = furniture;
-    const mainImage =
-        furniture.images.find((image) => image.is_main)?.path_image ??
-        furniture.images[0]?.path_image ??
-        null;
+
+    const images = furniture.images;
+    const initialIndex = Math.max(
+        0,
+        images.findIndex((image) => image.is_main),
+    );
+    const [activeIndex, setActiveIndex] = useState(initialIndex);
+
+    const activeImage = images[activeIndex] ?? images[0] ?? null;
+    const total = images.length;
+
+    const select = (index: number): void => {
+        if (total === 0) {
+            return;
+        }
+
+        setActiveIndex(((index % total) + total) % total);
+    };
+
+    const showPrev = (): void => select(activeIndex - 1);
+    const showNext = (): void => select(activeIndex + 1);
 
     const characteristics = buildCharacteristics(specifications);
-    const hasSpecs = Object.values(characteristics).some((value) => value !== null);
+    const hasSpecs = Object.values(characteristics).some(
+        (value) => value !== null,
+    );
 
     return (
         <>
@@ -31,9 +60,11 @@ export default function FurnitureShow({ furniture, specifications, related }: Pr
                     <span className="breadcrumbs__sep">/</span>
                     {furniture.category ? (
                         <Link
-                            href={catalogCategory({
-                                category_id: furniture.category.category_id,
-                            }).url}
+                            href={
+                                catalogCategory({
+                                    category_id: furniture.category.category_id,
+                                }).url
+                            }
                         >
                             {furniture.category.name}
                         </Link>
@@ -44,20 +75,78 @@ export default function FurnitureShow({ furniture, specifications, related }: Pr
 
                 <div className="furniture-show">
                     <div className="furniture-show__gallery">
-                        {mainImage ? (
-                            <img src={mainImage} alt={item.name} className="furniture-show__image" />
-                        ) : (
-                            <div className="furniture-show__placeholder">{item.name}</div>
-                        )}
-                        {furniture.images.length > 1 ? (
-                            <div className="furniture-show__thumbs">
-                                {furniture.images.map((image) => (
+                        {total > 0 ? (
+                            <div
+                                className="furniture-show__stage"
+                                tabIndex={0}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'ArrowLeft') {
+                                        showPrev();
+                                    }
+                                    if (event.key === 'ArrowRight') {
+                                        showNext();
+                                    }
+                                }}
+                            >
+                                {activeImage ? (
                                     <img
-                                        key={image.images_id}
-                                        src={image.path_image}
+                                        key={activeImage.images_id}
+                                        src={activeImage.path_image}
                                         alt={item.name}
-                                        className="furniture-show__thumb"
+                                        className="furniture-show__image"
                                     />
+                                ) : (
+                                    <div className="furniture-show__placeholder">
+                                        {item.name}
+                                    </div>
+                                )}
+
+                                {total > 1 ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="furniture-show__nav furniture-show__nav--prev"
+                                            onClick={showPrev}
+                                            aria-label="Предыдущее фото"
+                                        >
+                                            ‹
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="furniture-show__nav furniture-show__nav--next"
+                                            onClick={showNext}
+                                            aria-label="Следующее фото"
+                                        >
+                                            ›
+                                        </button>
+                                        <span className="furniture-show__counter">
+                                            {activeIndex + 1} / {total}
+                                        </span>
+                                    </>
+                                ) : null}
+                            </div>
+                        ) : null}
+
+                        {total > 1 ? (
+                            <div className="furniture-show__thumbs">
+                                {images.map((image, index) => (
+                                    <button
+                                        key={image.images_id}
+                                        type="button"
+                                        onClick={() => select(index)}
+                                        className={
+                                            index === activeIndex
+                                                ? 'furniture-show__thumb furniture-show__thumb--active'
+                                                : 'furniture-show__thumb'
+                                        }
+                                        aria-label={`Фото ${index + 1}`}
+                                        aria-current={index === activeIndex}
+                                    >
+                                        <img
+                                            src={image.path_image}
+                                            alt={item.name}
+                                        />
+                                    </button>
                                 ))}
                             </div>
                         ) : null}
@@ -70,18 +159,26 @@ export default function FurnitureShow({ furniture, specifications, related }: Pr
                             {furniture.manufacturer ? (
                                 <span>{furniture.manufacturer.name}</span>
                             ) : null}
-                            {furniture.category ? <span>{furniture.category.name}</span> : null}
+                            {furniture.category ? (
+                                <span>{furniture.category.name}</span>
+                            ) : null}
                             {item.color ? <span>{item.color}</span> : null}
                         </div>
 
                         {item.description ? (
-                            <p className="furniture-show__desc">{item.description}</p>
+                            <p className="furniture-show__desc">
+                                {item.description}
+                            </p>
                         ) : null}
 
                         <div className="furniture-show__price">
-                            <b>{Number(item.price).toLocaleString('ru-RU')} ₽</b>
+                            <b>
+                                {Number(item.price).toLocaleString('ru-RU')} ₽
+                            </b>
                             {item.quantity > 0 ? (
-                                <span className="furniture-show__stock">В наличии</span>
+                                <span className="furniture-show__stock">
+                                    В наличии
+                                </span>
                             ) : (
                                 <span className="furniture-show__stock furniture-show__stock--out">
                                     Нет в наличии
@@ -89,19 +186,31 @@ export default function FurnitureShow({ furniture, specifications, related }: Pr
                             )}
                         </div>
 
+                        {item.quantity > 0 ? (
+                            <CartAction
+                                furnitureId={item.furniture_id}
+                                furnitureName={item.name}
+                                addClassName="furniture-show__cart"
+                                inCartClassName="furniture-show__cart--added"
+                            />
+                        ) : null}
+
                         <section className="furniture-show__specs">
                             <h2>Характеристики</h2>
 
                             {hasSpecs ? (
                                 <table className="specs-table">
                                     <tbody>
-                                        {Object.entries(characteristics).map(([label, value]) =>
-                                            value === null ? null : (
-                                                <tr key={label}>
-                                                    <th scope="row">{label}</th>
-                                                    <td>{value}</td>
-                                                </tr>
-                                            ),
+                                        {Object.entries(characteristics).map(
+                                            ([label, value]) =>
+                                                value === null ? null : (
+                                                    <tr key={label}>
+                                                        <th scope="row">
+                                                            {label}
+                                                        </th>
+                                                        <td>{value}</td>
+                                                    </tr>
+                                                ),
                                         )}
                                     </tbody>
                                 </table>
@@ -120,15 +229,21 @@ export default function FurnitureShow({ furniture, specifications, related }: Pr
                             <h2>Похожие товары</h2>
                             {furniture.category ? (
                                 <Link
-                                    href={catalogCategory({
-                                        category_id: furniture.category.category_id,
-                                    }).url}
+                                    href={
+                                        catalogCategory({
+                                            category_id:
+                                                furniture.category.category_id,
+                                        }).url
+                                    }
                                     className="section-head__all"
                                 >
                                     Все товары категории →
                                 </Link>
                             ) : (
-                                <Link href={catalog().url} className="section-head__all">
+                                <Link
+                                    href={catalog().url}
+                                    className="section-head__all"
+                                >
                                     Весь каталог →
                                 </Link>
                             )}
@@ -150,8 +265,9 @@ export default function FurnitureShow({ furniture, specifications, related }: Pr
                         <div>
                             <h3>Распродажа месяца — скидки до 30%</h3>
                             <p>
-                                Сезонные скидки на спальни, кухни и мягкую мебель. Количество
-                                товаров по акции ограничено — успевайте выбрать мебель с выгодой.
+                                Сезонные скидки на спальни, кухни и мягкую
+                                мебель. Количество товаров по акции ограничено —
+                                успевайте выбрать мебель с выгодой.
                             </p>
                         </div>
                         <ul className="promo__points">
@@ -165,8 +281,9 @@ export default function FurnitureShow({ furniture, specifications, related }: Pr
                         <div>
                             <h3>Подарки и скидки покупателям</h3>
                             <p>
-                                Дарим бонусы за заказы и балуем приятными подарками. Скидка
-                                действует на любой товар из каталога.
+                                Дарим бонусы за заказы и балуем приятными
+                                подарками. Скидка действует на любой товар из
+                                каталога.
                             </p>
                         </div>
                         <ul className="promo__points">

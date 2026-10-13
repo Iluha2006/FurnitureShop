@@ -1,5 +1,5 @@
 import { usePasskeyRegister } from '@laravel/passkeys/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,28 +9,46 @@ type Props = {
     onSuccess: () => void;
 };
 
+function guessPasskeyName(): string {
+    const ua = typeof window === 'undefined' ? '' : window.navigator.userAgent;
+
+    if (!ua) {
+        return '';
+    }
+
+    const browser = [
+        { pattern: /Edg|Edge/, name: 'Edge' },
+        { pattern: /OPR|Opera|OPiOS/, name: 'Opera' },
+        { pattern: /Firefox|FxiOS/, name: 'Firefox' },
+        { pattern: /Chrome|CriOS/, name: 'Chrome' },
+        { pattern: /Safari/, name: 'Safari' },
+    ].find(({ pattern }) => pattern.test(ua))?.name;
+
+    const os = [
+        { pattern: /iPhone/, name: 'iPhone' },
+        { pattern: /iPad|Macintosh(?=.*Mobile)/, name: 'iPad' },
+        { pattern: /Android/, name: 'Android' },
+        { pattern: /Mac/, name: 'Mac' },
+        { pattern: /Windows/, name: 'Windows' },
+    ].find(({ pattern }) => pattern.test(ua))?.name;
+
+    return [browser, os].filter(Boolean).join(' on ') || '';
+}
+
 export default function PasskeyRegistration({ onSuccess }: Props) {
-    const [name, setName] = useState(() => {
-        const ua = navigator.userAgent;
+    // Deferred to an effect: the guess reads navigator, which does not exist
+    // while the page is server-rendered.
+    const [name, setName] = useState('');
+    const [isNameGuessed, setIsNameGuessed] = useState(false);
 
-        const browser = [
-            { pattern: /Edg|Edge/, name: 'Edge' },
-            { pattern: /OPR|Opera|OPiOS/, name: 'Opera' },
-            { pattern: /Firefox|FxiOS/, name: 'Firefox' },
-            { pattern: /Chrome|CriOS/, name: 'Chrome' },
-            { pattern: /Safari/, name: 'Safari' },
-        ].find(({ pattern }) => pattern.test(ua))?.name;
+    useEffect(() => {
+        if (isNameGuessed) {
+            return;
+        }
 
-        const os = [
-            { pattern: /iPhone/, name: 'iPhone' },
-            { pattern: /iPad|Macintosh(?=.*Mobile)/, name: 'iPad' },
-            { pattern: /Android/, name: 'Android' },
-            { pattern: /Mac/, name: 'Mac' },
-            { pattern: /Windows/, name: 'Windows' },
-        ].find(({ pattern }) => pattern.test(ua))?.name;
-
-        return [browser, os].filter(Boolean).join(' on ') || '';
-    });
+        setName(guessPasskeyName());
+        setIsNameGuessed(true);
+    }, [isNameGuessed]);
 
     const [showForm, setShowForm] = useState(false);
     const { register, isLoading, error, isSupported } = usePasskeyRegister({

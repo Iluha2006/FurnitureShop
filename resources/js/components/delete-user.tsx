@@ -1,10 +1,8 @@
 import { Form } from '@inertiajs/react';
 import { useRef } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
-import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogClose,
@@ -20,28 +18,27 @@ export default function DeleteUser() {
     const passwordInput = useRef<HTMLInputElement>(null);
 
     return (
-        <div className="space-y-6">
-            <Heading
-                variant="small"
-                title="Delete account"
-                description="Delete your account and all of its resources"
-            />
-            <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-                <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
-                    <p className="font-medium">Warning</p>
-                    <p className="text-sm">
-                        Please proceed with caution, this cannot be undone.
-                    </p>
-                </div>
+        <section className="profile__panel">
+            <h2 className="profile__title">Delete account</h2>
+            <p className="profile__desc">
+                Delete your account and all of its resources
+            </p>
+
+            <div className="profile__danger">
+                <p className="profile__danger-title">Warning</p>
+                <p className="profile__danger-desc">
+                    Please proceed with caution, this cannot be undone.
+                </p>
 
                 <Dialog>
                     <DialogTrigger asChild>
-                        <Button
-                            variant="destructive"
+                        <button
+                            type="button"
+                            className="btn btn--outline"
                             data-test="delete-user-button"
                         >
                             Delete account
-                        </Button>
+                        </button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogTitle>
@@ -61,11 +58,10 @@ export default function DeleteUser() {
                             }}
                             onError={() => passwordInput.current?.focus()}
                             resetOnSuccess
-                            className="space-y-6"
                         >
                             {({ resetAndClearErrors, processing, errors }) => (
                                 <>
-                                    <div className="grid gap-2">
+                                    <div className="profile__field">
                                         <Label
                                             htmlFor="password"
                                             className="sr-only"
@@ -79,35 +75,36 @@ export default function DeleteUser() {
                                             ref={passwordInput}
                                             placeholder="Password"
                                             autoComplete="current-password"
+                                            className="profile__input"
                                         />
 
-                                        <InputError message={errors.password} />
+                                        <InputError
+                                            className="profile__error"
+                                            message={errors.password}
+                                        />
                                     </div>
 
-                                    <DialogFooter className="gap-2">
+                                    <DialogFooter>
                                         <DialogClose asChild>
-                                            <Button
-                                                variant="secondary"
+                                            <button
+                                                type="button"
+                                                className="btn btn--outline"
                                                 onClick={() =>
                                                     resetAndClearErrors()
                                                 }
                                             >
                                                 Cancel
-                                            </Button>
+                                            </button>
                                         </DialogClose>
 
-                                        <Button
-                                            variant="destructive"
+                                        <button
+                                            type="submit"
+                                            className="btn btn--primary"
                                             disabled={processing}
-                                            asChild
+                                            data-test="confirm-delete-user-button"
                                         >
-                                            <button
-                                                type="submit"
-                                                data-test="confirm-delete-user-button"
-                                            >
-                                                Delete account
-                                            </button>
-                                        </Button>
+                                            Delete account
+                                        </button>
                                     </DialogFooter>
                                 </>
                             )}
@@ -115,6 +112,6 @@ export default function DeleteUser() {
                     </DialogContent>
                 </Dialog>
             </div>
-        </div>
+        </section>
     );
 }

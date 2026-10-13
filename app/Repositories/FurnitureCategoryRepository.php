@@ -21,7 +21,8 @@ class FurnitureCategoryRepository extends BaseRepository
      */
     public function getCategory(): Collection
     {
-        return $this->all()
+        return $this->query()
+            ->get()
             ->map(fn (FurnitureCategory $category) => FurnitureCategoryData::fromModel($category));
     }
 }

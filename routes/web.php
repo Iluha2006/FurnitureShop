@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Account\FavoriteController;
+use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FurnitureCategoryController;
@@ -41,6 +43,11 @@ Route::prefix('{current_team}')
 Route::middleware(['auth'])->group(function () {
     Route::post('invitations/{invitation}/accept', [TeamInvitationController::class, 'accept'])->name('invitations.accept');
     Route::delete('invitations/{invitation}', [TeamInvitationController::class, 'decline'])->name('invitations.decline');
+});
+
+Route::middleware(['auth'])->prefix('account')->name('account.')->group(function () {
+    Route::get('orders', [OrderController::class, 'index'])->name('orders');
+    Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites');
 });
 
 Route::middleware(['auth'])->prefix('cart')->name('cart.')->group(function () {

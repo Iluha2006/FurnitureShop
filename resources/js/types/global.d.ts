@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { CartQuantities } from '@/types/cart';
 import type { Team } from '@/types/teams';
 
 declare module 'react' {
@@ -13,6 +14,8 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            cartCount: number;
+            cartQuantities: CartQuantities;
             currentTeam: Team | null;
             teams: Team[];
             [key: string]: unknown;

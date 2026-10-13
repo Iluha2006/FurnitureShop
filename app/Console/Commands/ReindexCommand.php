@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Furniture;
+use App\Search\IndexManager;
 use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\Response\Elasticsearch;
 use Http\Promise\Promise;
@@ -18,14 +19,20 @@ class ReindexCommand extends Command
 {
     private const BULK_SIZE = 500;
 
-    public function handle(Client $elasticsearch): int
+    public function handle(Client $elasticsearch, IndexManager $indexManager): int
     {
         $index = (string) $this->argument('index');
 
         if ($this->confirm("Rebuild the Elasticsearch index [{$index}]?", true)) {
-            $this->deleteIndexIfExists($elasticsearch, $index);
+            if ($indexManager->exists($index)) {
+                $indexManager->delete($index);
 
-            $this->createIndex($elasticsearch, $index);
+                $this->info("Deleted existing index [{$index}].");
+            }
+
+            $indexManager->create($index);
+
+            $this->info("Index [{$index}] created with mapping.");
         }
 
         $total = $this->indexAllFurniture($elasticsearch, $index);
@@ -33,54 +40,6 @@ class ReindexCommand extends Command
         $this->info("Indexed {$total} furniture documents into [{$index}].");
 
         return self::SUCCESS;
-    }
-
-    private function deleteIndexIfExists(Client $client, string $index): void
-    {
-        $exists = $this->sync($client->indices()->exists(['index' => $index]))->asBool();
-
-        if (! $exists) {
-            return;
-        }
-
-        $this->sync($client->indices()->delete(['index' => $index]));
-
-        $this->info("Deleted existing index [{$index}].");
-    }
-
-    private function createIndex(Client $client, string $index): void
-    {
-        $this->sync($client->indices()->create([
-            'index' => $index,
-            'body' => [
-                'settings' => [
-                    'number_of_shards' => 1,
-                    'number_of_replicas' => 0,
-                ],
-                'mappings' => [
-                    'properties' => [
-                        'furniture_id' => ['type' => 'long'],
-                        'name' => [
-                            'type' => 'text',
-                            'analyzer' => 'russian',
-                            'fields' => ['keyword' => ['type' => 'keyword', 'ignore_above' => 256]],
-                        ],
-                        'description' => ['type' => 'text', 'analyzer' => 'russian'],
-                        'category_name' => ['type' => 'text', 'analyzer' => 'russian'],
-                        'color' => ['type' => 'keyword'],
-                        'price' => ['type' => 'double'],
-                        'quantity' => ['type' => 'integer'],
-                        'manufacturer_id' => ['type' => 'long'],
-                        'category_id' => ['type' => 'long'],
-                        'specifications_id' => ['type' => 'long'],
-                        'created_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'],
-                        'updated_at' => ['type' => 'date', 'format' => 'yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis'],
-                    ],
-                ],
-            ],
-        ]));
-
-        $this->info("Index [{$index}] created with mapping.");
     }
 
     private function indexAllFurniture(Client $client, string $index): int
@@ -119,7 +78,9 @@ class ReindexCommand extends Command
     }
 
     /**
-     * @param  list<array<mixed>>  $body
+     * Send one bulk request and return how many documents were indexed.
+     *
+     * @param  array<int, array<string, mixed>>  $body
      */
     private function bulkIndex(Client $client, array $body): int
     {

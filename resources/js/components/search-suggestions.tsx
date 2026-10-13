@@ -86,9 +86,9 @@ function FurnitureList({
                                     </span>
                                 </span>
                                 <span className="search-suggestions__price">
-                                    {Number(card.furniture.price).toLocaleString(
-                                        'ru-RU',
-                                    )}{' '}
+                                    {Number(
+                                        card.furniture.price,
+                                    ).toLocaleString('ru-RU')}{' '}
                                     ₽
                                 </span>
                             </Link>

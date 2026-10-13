@@ -41,7 +41,6 @@ class AppServiceProvider extends ServiceProvider
             ->build());
     }
 
-   
     public function boot(): void
     {
         if (config('elasticsearch.enabled')) {
@@ -51,7 +50,6 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
     }
 
-   
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);

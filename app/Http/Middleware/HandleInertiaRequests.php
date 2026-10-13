@@ -2,11 +2,27 @@
 
 namespace App\Http\Middleware;
 
+use App\Interfaces\QueryBusInterface;
+use App\Models\User;
+use App\Queries\GetCartQuantitiesQuery;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(
+        private readonly QueryBusInterface $queryBus,
+    ) {
+        //
+    }
+
+    /**
+     * Cart contents resolved once per request and shared by both cart props.
+     *
+     * @var array<string, int>|null
+     */
+    private ?array $cartQuantities = null;
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -44,8 +60,28 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'cartQuantities' => fn (): array => $this->cartQuantities($user),
+            'cartCount' => fn (): int => array_sum($this->cartQuantities($user)),
             'currentTeam' => fn () => $user?->currentTeam ? $user->toUserTeam($user->currentTeam) : null,
             'teams' => fn () => $user?->toUserTeams(includeCurrent: true) ?? [],
         ];
+    }
+
+    /**
+     * Map of furniture id to its quantity in the visitor's cart.
+     *
+     * Guests and empty carts never hit the database.
+     *
+     * @return array<string, int>
+     */
+    private function cartQuantities(?User $user): array
+    {
+        if ($this->cartQuantities !== null) {
+            return $this->cartQuantities;
+        }
+
+        return $this->cartQuantities = $user === null
+            ? []
+            : $this->queryBus->ask(new GetCartQuantitiesQuery($user->id));
     }
 }

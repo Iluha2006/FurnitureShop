@@ -40,10 +40,7 @@ export default function FurnitureByCategory({
                 </nav>
 
                 <section className="category__head">
-                    <h1>
-                       
-                        {currentCategory?.name ?? 'Категория'}
-                    </h1>
+                    <h1>{currentCategory?.name ?? 'Категория'}</h1>
                     <p className="category__desc">
                         Мебель категории «{currentCategory?.name}» — в наличии.
                     </p>

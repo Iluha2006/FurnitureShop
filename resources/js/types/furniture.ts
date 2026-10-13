@@ -1,6 +1,7 @@
 export type FurnitureCategoryData = {
     category_id: number;
     name: string;
+    image_url: string | null;
 };
 
 export type FurnitureManufacturerData = {

@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { show as furnitureShow } from '@/routes/catalog/furniture';
+import CartAction from '@/components/cart-action';
 import type { FurnitureCardData } from '@/types';
 
 export default function FurnitureCard({ card }: { card: FurnitureCardData }) {
@@ -8,23 +9,26 @@ export default function FurnitureCard({ card }: { card: FurnitureCardData }) {
     return (
         <article className="card">
             <Link
-                href={furnitureShow({ furniture_id: furniture.furniture_id }).url}
+                href={
+                    furnitureShow({ furniture_id: furniture.furniture_id }).url
+                }
                 className="card__image"
             >
                 {mainImage ? (
-                    <img
-                        src={mainImage}
-                        alt={furniture.name}
-                        loading="lazy"
-                        style={{ width: '100%',  objectFit:"contain" }}
-                    />
+                    <img src={mainImage} alt={furniture.name} loading="lazy" />
                 ) : (
                     <span className="card__image-label">{furniture.name}</span>
                 )}
             </Link>
             <div className="card__body">
                 <h3 className="card__title">
-                    <Link href={furnitureShow({ furniture_id: furniture.furniture_id }).url}>
+                    <Link
+                        href={
+                            furnitureShow({
+                                furniture_id: furniture.furniture_id,
+                            }).url
+                        }
+                    >
                         {furniture.name}
                     </Link>
                 </h3>
@@ -34,9 +38,10 @@ export default function FurnitureCard({ card }: { card: FurnitureCardData }) {
                 </div>
                 <div className="card__buy">
                     <div className="card__price">
-                        <b>{Number(furniture.price).toLocaleString('ru-RU')} ₽</b>
+                        <b>
+                            {Number(furniture.price).toLocaleString('ru-RU')} ₽
+                        </b>
                     </div>
-                    <span className="card__cart btn btn--primary">Подробнее</span>
                 </div>
             </div>
         </article>

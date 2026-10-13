@@ -13,6 +13,11 @@ readonly class CartItemData
         public int $furniture_id,
         public string $name,
         public int $quantity,
+
+        /**
+         * Units on hand: the ceiling for this cart line.
+         */
+        public int $stock,
         public string $price_amount,
         public string $price_currency,
         public string $price_formatted,
@@ -37,6 +42,7 @@ readonly class CartItemData
             furniture_id: $item->furniture_id,
             name: $furniture->name,
             quantity: $item->quantity,
+            stock: max(0, (int) $furniture->quantity),
             price_amount: $item->price_amount,
             price_currency: $item->price_currency,
             price_formatted: $currency->format($item->price_amount),

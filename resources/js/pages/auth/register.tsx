@@ -71,11 +71,17 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                     placeholder="email@example.com"
                                     className="auth-input"
                                 />
-                                <InputError message={errors.email} className="auth-error" />
+                                <InputError
+                                    message={errors.email}
+                                    className="auth-error"
+                                />
                             </div>
 
                             <div className="auth-field">
-                                <Label htmlFor="password" className="auth-label">
+                                <Label
+                                    htmlFor="password"
+                                    className="auth-label"
+                                >
                                     Пароль
                                 </Label>
                                 <PasswordInput
@@ -88,7 +94,10 @@ export default function Register({ passwordRules, teamInvitation }: Props) {
                                     passwordrules={passwordRules}
                                     className="auth-input"
                                 />
-                                <InputError message={errors.password} className="auth-error" />
+                                <InputError
+                                    message={errors.password}
+                                    className="auth-error"
+                                />
                             </div>
 
                             <div className="auth-field">

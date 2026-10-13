@@ -1,5 +1,11 @@
 <?php
 
+use App\Data\Filter\FilterOptionsData;
+use App\Data\Filter\HeightRangeData;
+use App\Data\Filter\LengthRangeData;
+use App\Data\Filter\PriceRangeData;
+use App\Data\Filter\SortOptionData;
+use App\Data\Filter\WidthRangeData;
 use App\Data\FurnitureCardData;
 use App\Data\FurnitureCategoryData;
 use App\Data\FurnitureData;
@@ -155,6 +161,12 @@ return [
         FurnitureManufacturerData::class,
         FurnitureImageData::class,
         FurnitureSpecificationData::class,
+        FilterOptionsData::class,
+        PriceRangeData::class,
+        WidthRangeData::class,
+        HeightRangeData::class,
+        LengthRangeData::class,
+        SortOptionData::class,
     ],
 
 ];

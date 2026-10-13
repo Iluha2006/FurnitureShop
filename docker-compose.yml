@@ -1,123 +1,127 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
-    image: archiweb-app:latest
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - APP_URL=http://localhost:8080
-      # public/hot points at localhost:5173, which is not reachable from this
-      # container. In dev the Vite plugin serves SSR, so route Laravel at the
-      # vite service instead.
-      - INERTIA_SSR_HOT_URL=http://vite:5173
-    # Dev: live sync of host sources — code changes are picked up on the fly.
-    # No image rebuild / volume reset needed after editing files.
-    volumes:
-      - ./:/var/www/html
-    depends_on:
-      db:
-        condition: service_healthy
-      vite:
-        condition: service_started
-    # Elasticsearch/Logstash/Kibana live in the separate archiweb-elk project
-    # (docker-compose_elk.yml) and are reached through the host port mapping.
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - archiweb
+    app:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+        image: archiweb-app:latest
+        restart: unless-stopped
+        env_file: .env
+        environment:
+            - DB_HOST=db
+            - DB_PORT=5432
+            - APP_URL=http://localhost:8080
+            # public/hot points at localhost:5173, which is not reachable from this
+            # container. In dev the Vite plugin serves SSR, so route Laravel at the
+            # vite service instead.
+            - INERTIA_SSR_HOT_URL=http://vite:5173
+        # Dev: live sync of host sources — code changes are picked up on the fly.
+        # No image rebuild / volume reset needed after editing files.
+        volumes:
+            - ./:/var/www/html
+        depends_on:
+            db:
+                condition: service_healthy
+            vite:
+                condition: service_started
+        # Elasticsearch/Logstash/Kibana live in the separate archiweb-elk project
+        # (docker-compose_elk.yml) and are reached through the host port mapping.
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        networks:
+            - archiweb
 
-  webserver:
-    build:
-      context: ./docker/nginx
-    image: archiweb-nginx:latest
-    restart: unless-stopped
-    ports:
-      - "8080:80"
-    volumes:
-      - ./:/var/www/html
-    depends_on:
-      - app
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    networks:
-      - archiweb
+    webserver:
+        build:
+            context: ./docker/nginx
+        image: archiweb-nginx:latest
+        restart: unless-stopped
+        ports:
+            - '8080:80'
+        volumes:
+            - ./:/var/www/html
+        depends_on:
+            - app
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        networks:
+            - archiweb
 
-  # Vite dev server with HMR: edits to resources/js|css are applied live on the
-  # page. Laravel picks it up via the `public/hot` file written by the plugin.
-  vite:
-    build:
-      context: .
-      dockerfile: docker/node/Dockerfile
-    image: archiweb-vite:latest
-    restart: unless-stopped
-    working_dir: /var/www/html
-    env_file: .env
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - APP_URL=http://localhost:8080
-    volumes:
-      - ./:/var/www/html
-    ports:
-      - "5173:5173"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    command: sh -c "npm run dev -- --host 0.0.0.0 --port 5173"
-    networks:
-      - archiweb
+    # Vite dev server with HMR: edits to resources/js|css are applied live on the
+    # page. Laravel picks it up via the `public/hot` file written by the plugin.
+    vite:
+        build:
+            context: .
+            dockerfile: docker/node/Dockerfile
+        image: archiweb-vite:latest
+        restart: unless-stopped
+        working_dir: /var/www/html
+        env_file: .env
+        environment:
+            - DB_HOST=db
+            - DB_PORT=5432
+            - APP_URL=http://localhost:8080
+        volumes:
+            - ./:/var/www/html
+        ports:
+            - '5173:5173'
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        command: sh -c "npm run dev -- --host 0.0.0.0 --port 5173"
+        networks:
+            - archiweb
 
-  # Production only: the Node process that renders pages to HTML. Requires
-  # `npm run build:ssr` (bootstrap/ssr/app.js) to have run first, and public/hot
-  # to be absent so Laravel talks to the production SSR URL instead. In dev the
-  # vite service above serves SSR, so this service stays stopped.
-  ssr:
-    build:
-      context: .
-      dockerfile: docker/node/Dockerfile
-    image: archiweb-vite:latest
-    restart: unless-stopped
-    profiles: ["ssr"]
-    working_dir: /var/www/html
-    env_file: .env
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - APP_URL=http://localhost:8080
-      - INERTIA_SSR_URL=http://ssr:13714
-    volumes:
-      - ./:/var/www/html
-    depends_on:
-      db:
-        condition: service_healthy
-    command: sh -c "php artisan inertia:start-ssr"
-    networks:
-      - archiweb
+    # Production only: the Node process that renders pages to HTML. Requires
+    # `npm run build:ssr` (bootstrap/ssr/app.js) to have run first, and public/hot
+    # to be absent so Laravel talks to the production SSR URL instead. In dev the
+    # vite service above serves SSR, so this service stays stopped.
+    ssr:
+        build:
+            context: .
+            dockerfile: docker/node/Dockerfile
+        image: archiweb-vite:latest
+        restart: unless-stopped
+        profiles: ['ssr']
+        working_dir: /var/www/html
+        env_file: .env
+        environment:
+            - DB_HOST=db
+            - DB_PORT=5432
+            - APP_URL=http://localhost:8080
+            - INERTIA_SSR_URL=http://ssr:13714
+        volumes:
+            - ./:/var/www/html
+        depends_on:
+            db:
+                condition: service_healthy
+        command: sh -c "php artisan inertia:start-ssr"
+        networks:
+            - archiweb
 
-  db:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${DB_DATABASE:?set DB_DATABASE in .env}
-      POSTGRES_USER: ${DB_USERNAME:?set DB_USERNAME in .env}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-      start_period: 10s
-    networks:
-      - archiweb
+    db:
+        image: postgres:16
+        restart: unless-stopped
+        environment:
+            POSTGRES_DB: ${DB_DATABASE:?set DB_DATABASE in .env}
+            POSTGRES_USER: ${DB_USERNAME:?set DB_USERNAME in .env}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test:
+                [
+                    'CMD-SHELL',
+                    'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}',
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 12
+            start_period: 10s
+        networks:
+            - archiweb
 
 volumes:
-  pgdata:
+    pgdata:
 
 networks:
-  archiweb:
-    driver: bridge
+    archiweb:
+        driver: bridge

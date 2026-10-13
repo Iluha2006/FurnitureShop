@@ -7,8 +7,11 @@ use App\Models\FurnitureCategory;
 use App\Models\FurnitureImage;
 use App\Models\FurnitureManufacturer;
 use App\Models\FurnitureSpecification;
+use App\Support\FurnitureSvgRenderer;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -17,6 +20,23 @@ use Throwable;
 class FurnitureSeeder extends Seeder
 {
     use WithoutModelEvents;
+
+    /**
+     * Consecutive failed Openverse requests before the API is skipped for the
+     * rest of the run and the SVG fallback is used instead. Keeps seeding fast
+     * when Openverse is rate-limiting the network (HTTP 429).
+     */
+    private const OPENVERSE_FAILURE_LIMIT = 6;
+
+    /**
+     * Number of consecutive failed Openverse requests so far.
+     */
+    private int $openverseFailures = 0;
+
+    /**
+     * Whether Openverse is still considered usable in this run.
+     */
+    private bool $openverseAvailable = true;
 
     /**
      * English furniture type keywords mapped by furniture category.
@@ -115,7 +135,33 @@ class FurnitureSeeder extends Seeder
     ];
 
     /**
-     * The 50 furniture items to seed.
+     * How many photos are generated for every furniture item. The gallery on
+     * the product page uses all of them.
+     */
+    private const IMAGE_COUNT = 5;
+
+    /**
+     * Words that indicate a photograph with people in it. Matched case-insensitively
+     * on whole words against image titles and tags.
+     */
+    private const PERSON_PATTERN = '/\b(people|person|man|men|woman|women|girl|boy|baby|friend|family|child|children|kid|kids|couple|guy|human|portrait)\b/';
+
+    /**
+     * Stop words that are useless when scoring image candidates.
+     *
+     * @var string[]
+     */
+    private const STOP_WORDS = ['of', 'the', 'a', 'an', 'and', 'with', 'for', 'in', 'on', 'at'];
+
+    /**
+     * Image URLs already assigned to another furniture item during this run.
+     *
+     * @var array<string, true>
+     */
+    private array $usedImageUrls = [];
+
+    /**
+     * The 70 furniture items to seed.
      *
      * @var array<int, array<string, mixed>>
      */
@@ -154,6 +200,17 @@ class FurnitureSeeder extends Seeder
             'images' => 2,
             'spec' => ['width_cm' => 120, 'length_cm' => 40, 'height_cm' => 50, 'materials' => 'ЛДСП', 'surface' => 'Плёнка ПВХ', 'weight_kg' => 28, 'package_volume_m3' => 0.24, 'warranty' => '12 месяцев'],
         ],
+        [
+            'name' => 'Тумба прикроватная Норд',
+            'description' => 'Компактная прикроватная тумба с одним ящиком и открытой нишей. Хромированные ножки в комплекте.',
+            'color' => 'Бежевый',
+            'price' => 5200.00,
+            'quantity' => 18,
+            'category' => 'Комоды и тумбы',
+            'manufacturer' => 'Ангстрем',
+            'images' => 2,
+            'spec' => ['width_cm' => 45, 'length_cm' => 40, 'height_cm' => 55, 'materials' => 'ЛДСП', 'surface' => 'Меламиновая кромка', 'weight_kg' => 14, 'package_volume_m3' => 0.09, 'warranty' => '12 месяцев'],
+        ],
 
         // Мебель для детской комнаты
         [
@@ -188,6 +245,17 @@ class FurnitureSeeder extends Seeder
             'manufacturer' => 'ТриЯ',
             'images' => 2,
             'spec' => ['width_cm' => 70, 'length_cm' => 38, 'height_cm' => 88, 'materials' => 'МДФ', 'surface' => 'Эмаль', 'weight_kg' => 30, 'package_volume_m3' => 0.26, 'warranty' => '24 месяца'],
+        ],
+        [
+            'name' => 'Кровать детская Малыш 70x140',
+            'description' => 'Кроватка 70х140 см из массива сосны с защитными бортиками и выдвижным ящиком для белья.',
+            'color' => 'Дуб',
+            'price' => 9400.00,
+            'quantity' => 11,
+            'category' => 'Мебель для детской комнаты',
+            'manufacturer' => 'Много мебели',
+            'images' => 3,
+            'spec' => ['width_cm' => 72, 'length_cm' => 144, 'height_cm' => 88, 'materials' => 'Массив сосны', 'surface' => 'Водная эмаль', 'weight_kg' => 30, 'package_volume_m3' => 0.4, 'warranty' => '24 месяца'],
         ],
 
         // Мебель для кухни
@@ -224,6 +292,17 @@ class FurnitureSeeder extends Seeder
             'images' => 2,
             'spec' => ['width_cm' => 60, 'length_cm' => 30, 'height_cm' => 72, 'materials' => 'ЛДСП', 'surface' => 'Глянец', 'weight_kg' => 18, 'package_volume_m3' => 0.13, 'warranty' => '12 месяцев'],
         ],
+        [
+            'name' => 'Кухонный гарнитур Виктория',
+            'description' => 'Классический гарнитур из пяти модулей с фасадами под эмаль. Петли с доводчиками.',
+            'color' => 'Белый',
+            'price' => 41200.00,
+            'quantity' => 3,
+            'category' => 'Мебель для кухни',
+            'manufacturer' => 'Столплит',
+            'images' => 4,
+            'spec' => ['width_cm' => 260, 'length_cm' => 60, 'height_cm' => 215, 'materials' => 'ЛДСП', 'surface' => 'Глянец', 'weight_kg' => 130, 'package_volume_m3' => 2.1, 'warranty' => '24 месяца'],
+        ],
 
         // Мебель для офиса
         [
@@ -259,6 +338,17 @@ class FurnitureSeeder extends Seeder
             'images' => 2,
             'spec' => ['width_cm' => 100, 'length_cm' => 45, 'height_cm' => 180, 'materials' => 'ЛДСП', 'surface' => 'Лакированная', 'weight_kg' => 65, 'package_volume_m3' => 0.85, 'warranty' => '24 месяца'],
         ],
+        [
+            'name' => 'Стол для переговоров Капитолий',
+            'description' => 'Просторный офисный стол для переговоров с кабель-каналом и опорой-трапецией.',
+            'color' => 'Орех',
+            'price' => 24800.00,
+            'quantity' => 4,
+            'category' => 'Мебель для офиса',
+            'manufacturer' => 'Ангстрем',
+            'images' => 3,
+            'spec' => ['width_cm' => 200, 'length_cm' => 100, 'height_cm' => 75, 'materials' => 'ЛДСП', 'surface' => 'Меламиновая кромка', 'weight_kg' => 85, 'package_volume_m3' => 1.5, 'warranty' => '24 месяца'],
+        ],
 
         // Мебель для ванной комнаты
         [
@@ -282,6 +372,28 @@ class FurnitureSeeder extends Seeder
             'manufacturer' => 'Миасс-Мебель',
             'images' => 2,
             'spec' => ['width_cm' => 40, 'length_cm' => 25, 'height_cm' => 160, 'materials' => 'Влагостойкий МДФ', 'surface' => 'Матовый лак', 'weight_kg' => 24, 'package_volume_m3' => 0.18, 'warranty' => '12 месяцев'],
+        ],
+        [
+            'name' => 'Зеркало для ванной Капля',
+            'description' => 'Зеркало каплевидной формы с влагостойкой рамой из МДФ. Крепёж в комплекте.',
+            'color' => 'Белый',
+            'price' => 4600.00,
+            'quantity' => 15,
+            'category' => 'Мебель для ванной комнаты',
+            'manufacturer' => 'Миасс-Мебель',
+            'images' => 2,
+            'spec' => ['width_cm' => 50, 'length_cm' => 4, 'height_cm' => 70, 'materials' => 'Влагостойкий МДФ', 'surface' => 'Глянец', 'weight_kg' => 6, 'package_volume_m3' => 0.08, 'warranty' => '12 месяцев'],
+        ],
+        [
+            'name' => 'Тумба для ванной Веста',
+            'description' => 'Напольная тумба для ванной с двумя открытыми полками. Подходит для раковины 50 см.',
+            'color' => 'Графит',
+            'price' => 6800.00,
+            'quantity' => 9,
+            'category' => 'Мебель для ванной комнаты',
+            'manufacturer' => 'Миасс-Мебель',
+            'images' => 2,
+            'spec' => ['width_cm' => 50, 'length_cm' => 40, 'height_cm' => 60, 'materials' => 'Влагостойкий МДФ', 'surface' => 'Матовый лак', 'weight_kg' => 16, 'package_volume_m3' => 0.12, 'warranty' => '12 месяцев'],
         ],
 
         // Мебель для спальни
@@ -318,6 +430,28 @@ class FurnitureSeeder extends Seeder
             'images' => 2,
             'spec' => ['width_cm' => 45, 'length_cm' => 40, 'height_cm' => 55, 'materials' => 'ЛДСП', 'surface' => 'Эмаль', 'weight_kg' => 15, 'package_volume_m3' => 0.1, 'warranty' => '12 месяцев'],
         ],
+        [
+            'name' => 'Кровать односпальная Орхидея 90x200',
+            'description' => 'Односпальная кровать 90х200 с мягким изголовьем и металлическими ножками.',
+            'color' => 'Графит',
+            'price' => 19800.00,
+            'quantity' => 6,
+            'category' => 'Мебель для спальни',
+            'manufacturer' => 'Шатура',
+            'images' => 3,
+            'spec' => ['width_cm' => 104, 'length_cm' => 212, 'height_cm' => 110, 'materials' => 'МДФ', 'surface' => 'Эмаль', 'weight_kg' => 45, 'package_volume_m3' => 0.9, 'warranty' => '24 месяца'],
+        ],
+        [
+            'name' => 'Шкаф трёхдверный Венеция',
+            'description' => 'Трёхдверный шкаф для спальни с зеркальной средней дверью и антресолью.',
+            'color' => 'Дуб',
+            'price' => 32800.00,
+            'quantity' => 4,
+            'category' => 'Мебель для спальни',
+            'manufacturer' => 'Лазурит',
+            'images' => 3,
+            'spec' => ['width_cm' => 180, 'length_cm' => 55, 'height_cm' => 230, 'insert_type' => 'Зеркало', 'materials' => 'ЛДСП', 'surface' => 'Шпон дуба', 'weight_kg' => 120, 'package_volume_m3' => 2.2, 'warranty' => '24 месяца'],
+        ],
 
         // Стеллажи
         [
@@ -353,6 +487,17 @@ class FurnitureSeeder extends Seeder
             'images' => 2,
             'spec' => ['width_cm' => 60, 'length_cm' => 60, 'height_cm' => 160, 'materials' => 'ЛДСП', 'surface' => 'Плёнка ПВХ', 'weight_kg' => 34, 'package_volume_m3' => 0.4, 'warranty' => '12 месяцев'],
         ],
+        [
+            'name' => 'Стеллаж модульный Лондон 6 полок',
+            'description' => 'Модульный стеллаж на шесть полок. Секции можно комбинировать с тумбами.',
+            'color' => 'Орех',
+            'price' => 13200.00,
+            'quantity' => 7,
+            'category' => 'Стеллажи',
+            'manufacturer' => 'Ангстрем',
+            'images' => 2,
+            'spec' => ['width_cm' => 80, 'length_cm' => 34, 'height_cm' => 200, 'materials' => 'ЛДСП', 'surface' => 'Меламиновая кромка', 'weight_kg' => 42, 'package_volume_m3' => 0.55, 'warranty' => '12 месяцев'],
+        ],
 
         // Прихожие
         [
@@ -377,6 +522,17 @@ class FurnitureSeeder extends Seeder
             'images' => 3,
             'spec' => ['width_cm' => 150, 'length_cm' => 40, 'height_cm' => 200, 'insert_type' => 'Зеркало', 'materials' => 'МДФ', 'surface' => 'Шпон ореха', 'weight_kg' => 68, 'package_volume_m3' => 1.1, 'warranty' => '24 месяца'],
         ],
+        [
+            'name' => 'Прихожая Венеция с сиденьем',
+            'description' => 'Прихожая с открытым сиденьем, зеркалом и вешалами. Верхняя полка для сумок и головных уборов.',
+            'color' => 'Венге',
+            'price' => 18600.00,
+            'quantity' => 5,
+            'category' => 'Прихожие',
+            'manufacturer' => 'ТриЯ',
+            'images' => 3,
+            'spec' => ['width_cm' => 130, 'length_cm' => 38, 'height_cm' => 205, 'insert_type' => 'Зеркало', 'materials' => 'МДФ', 'surface' => 'Эмаль', 'weight_kg' => 60, 'package_volume_m3' => 1.0, 'warranty' => '24 месяца'],
+        ],
 
         // Стенки для гостиной
         [
@@ -400,6 +556,17 @@ class FurnitureSeeder extends Seeder
             'manufacturer' => 'Шатура',
             'images' => 3,
             'spec' => ['width_cm' => 220, 'length_cm' => 42, 'height_cm' => 210, 'insert_type' => 'Зеркало', 'materials' => 'МДФ', 'surface' => 'Эмаль', 'weight_kg' => 150, 'package_volume_m3' => 2.4, 'warranty' => '24 месяца'],
+        ],
+        [
+            'name' => 'Стенка гостиная Прага',
+            'description' => 'Современная стенка с открытыми полками, тумбой под ТВ и витриной под стеклом.',
+            'color' => 'Дуб сонома',
+            'price' => 45600.00,
+            'quantity' => 3,
+            'category' => 'Стенки для гостиной',
+            'manufacturer' => 'Сандэр',
+            'images' => 4,
+            'spec' => ['width_cm' => 280, 'length_cm' => 44, 'height_cm' => 220, 'insert_type' => 'Стекло', 'materials' => 'ЛДСП', 'surface' => 'Плёнка ПВХ', 'weight_kg' => 190, 'package_volume_m3' => 3.2, 'warranty' => '24 месяца'],
         ],
 
         // Столы
@@ -447,6 +614,28 @@ class FurnitureSeeder extends Seeder
             'images' => 3,
             'spec' => ['width_cm' => 140, 'length_cm' => 45, 'height_cm' => 75, 'folding_type' => 'Дельфин', 'materials' => 'ЛДСП', 'surface' => 'Плёнка ПВХ', 'weight_kg' => 72, 'package_volume_m3' => 0.9, 'warranty' => '24 месяца'],
         ],
+        [
+            'name' => 'Стол обеденный Монако 160x90',
+            'description' => 'Большой обеденный стол 160х90 см из массива бука. Раскладывается до 240 см.',
+            'color' => 'Орех',
+            'price' => 17400.00,
+            'quantity' => 6,
+            'category' => 'Столы',
+            'manufacturer' => 'Дятьково',
+            'images' => 3,
+            'spec' => ['width_cm' => 160, 'length_cm' => 90, 'height_cm' => 75, 'materials' => 'Массив бука', 'surface' => 'Термостойкий лак', 'weight_kg' => 58, 'package_volume_m3' => 0.9, 'warranty' => '24 месяца'],
+        ],
+        [
+            'name' => 'Стол-трансформер Гнездо 150x80',
+            'description' => 'Стол-трансформер с механизмом «книжка». В сложенном виде занимает всего 60 см.',
+            'color' => 'Дуб',
+            'price' => 15200.00,
+            'quantity' => 8,
+            'category' => 'Столы',
+            'manufacturer' => 'Много мебели',
+            'images' => 3,
+            'spec' => ['width_cm' => 150, 'length_cm' => 80, 'height_cm' => 75, 'folding_type' => 'Книжка', 'materials' => 'Массив сосны', 'surface' => 'Термостойкий лак', 'weight_kg' => 50, 'package_volume_m3' => 0.8, 'warranty' => '24 месяца'],
+        ],
 
         // Шкафы-купе
         [
@@ -482,6 +671,17 @@ class FurnitureSeeder extends Seeder
             'images' => 3,
             'spec' => ['width_cm' => 160, 'length_cm' => 160, 'height_cm' => 240, 'materials' => 'ЛДСП', 'surface' => 'Глянец', 'weight_kg' => 175, 'package_volume_m3' => 3.0, 'warranty' => '24 месяца'],
         ],
+        [
+            'name' => 'Шкаф-купе Прованс 2 двери',
+            'description' => 'Двухдверный шкаф-купе с матовыми фасадами и внутренним зеркалом.',
+            'color' => 'Белый',
+            'price' => 23600.00,
+            'quantity' => 5,
+            'category' => 'Шкафы-купе',
+            'manufacturer' => 'Столплит',
+            'images' => 3,
+            'spec' => ['width_cm' => 160, 'length_cm' => 58, 'height_cm' => 230, 'insert_type' => 'Зеркало', 'materials' => 'ЛДСП', 'surface' => 'Матовый лак', 'weight_kg' => 130, 'package_volume_m3' => 2.4, 'warranty' => '24 месяца'],
+        ],
 
         // Раздвижные двери
         [
@@ -506,6 +706,17 @@ class FurnitureSeeder extends Seeder
             'images' => 2,
             'spec' => ['width_cm' => 100, 'length_cm' => 12, 'height_cm' => 220, 'insert_type' => 'Зеркало', 'materials' => 'Алюминий', 'surface' => 'Пескоструй', 'weight_kg' => 38, 'package_volume_m3' => 0.28, 'warranty' => '12 месяцев'],
         ],
+        [
+            'name' => 'Дверь раздвижная Белое Дерево',
+            'description' => 'Раздвижная дверь с матовым белым стеклом и алюминиевым профилем.',
+            'color' => 'Дуб',
+            'price' => 15800.00,
+            'quantity' => 6,
+            'category' => 'Раздвижные двери',
+            'manufacturer' => 'Лазурит',
+            'images' => 2,
+            'spec' => ['width_cm' => 95, 'length_cm' => 12, 'height_cm' => 210, 'insert_type' => 'Стекло матовое', 'materials' => 'Алюминий', 'surface' => 'Стекло', 'weight_kg' => 30, 'package_volume_m3' => 0.24, 'warranty' => '12 месяцев'],
+        ],
 
         // Товары для дома
         [
@@ -529,6 +740,17 @@ class FurnitureSeeder extends Seeder
             'manufacturer' => 'ТриЯ',
             'images' => 2,
             'spec' => ['width_cm' => 60, 'length_cm' => 25, 'height_cm' => 160, 'materials' => 'МДФ', 'surface' => 'Эмаль', 'weight_kg' => 14, 'package_volume_m3' => 0.12, 'warranty' => '12 месяцев'],
+        ],
+        [
+            'name' => 'Этажерка для книг Лофт',
+            'description' => 'Минималистичная этажерка из металла с четырьмя полками для книг и декора.',
+            'color' => 'Чёрный',
+            'price' => 5800.00,
+            'quantity' => 12,
+            'category' => 'Товары для дома',
+            'manufacturer' => 'Столплит',
+            'images' => 2,
+            'spec' => ['width_cm' => 50, 'length_cm' => 30, 'height_cm' => 160, 'materials' => 'Металл', 'surface' => 'Порошковая эмаль', 'weight_kg' => 12, 'package_volume_m3' => 0.2, 'warranty' => '12 месяцев'],
         ],
 
         // Матрасы
@@ -575,6 +797,17 @@ class FurnitureSeeder extends Seeder
             'manufacturer' => 'Лазурит',
             'images' => 3,
             'spec' => ['width_cm' => 140, 'length_cm' => 200, 'height_cm' => 22, 'materials' => 'Пена Memory', 'surface' => 'Флок', 'weight_kg' => 24, 'package_volume_m3' => 0.62, 'warranty' => '24 месяца'],
+        ],
+        [
+            'name' => 'Матрас Прованс пружинный 120x200',
+            'description' => 'Матрас с пружинным блоком Bonnel и войлочной прослойкой. Комфортная жёсткость.',
+            'color' => 'Бежевый',
+            'price' => 11800.00,
+            'quantity' => 13,
+            'category' => 'Матрасы',
+            'manufacturer' => 'Дятьково',
+            'images' => 2,
+            'spec' => ['width_cm' => 120, 'length_cm' => 200, 'height_cm' => 20, 'materials' => 'Войлок, ППУ', 'surface' => 'Трикотаж', 'weight_kg' => 20, 'package_volume_m3' => 0.48, 'warranty' => '12 месяцев'],
         ],
 
         // Диваны
@@ -633,6 +866,17 @@ class FurnitureSeeder extends Seeder
             'images' => 3,
             'spec' => ['width_cm' => 160, 'length_cm' => 90, 'height_cm' => 85, 'folding_type' => 'Аккордеон', 'materials' => 'Шенилл', 'weight_kg' => 45, 'package_volume_m3' => 1.3, 'warranty' => '24 месяца'],
         ],
+        [
+            'name' => 'Диван Монако угловой',
+            'description' => 'Угловой диван с механизмом «еврокнижка» и вместительным бельевым ящиком.',
+            'color' => 'Коричневый',
+            'price' => 42800.00,
+            'quantity' => 4,
+            'category' => 'Диваны',
+            'manufacturer' => 'Сандэр',
+            'images' => 4,
+            'spec' => ['width_cm' => 250, 'length_cm' => 150, 'height_cm' => 88, 'folding_type' => 'Еврокнижка', 'materials' => 'Велюр', 'weight_kg' => 100, 'package_volume_m3' => 3.2, 'warranty' => '24 месяца'],
+        ],
 
         // Кресла
         [
@@ -667,6 +911,17 @@ class FurnitureSeeder extends Seeder
             'manufacturer' => 'Лазурит',
             'images' => 2,
             'spec' => ['width_cm' => 68, 'length_cm' => 95, 'height_cm' => 105, 'materials' => 'Массив берёзы', 'surface' => 'Лак', 'weight_kg' => 22, 'package_volume_m3' => 0.7, 'warranty' => '24 месяца'],
+        ],
+        [
+            'name' => 'Кресло релакс Орбита',
+            'description' => 'Кресло для отдыха с высокой спинкой и механизмом релакс.',
+            'color' => 'Синий',
+            'price' => 15400.00,
+            'quantity' => 7,
+            'category' => 'Кресла',
+            'manufacturer' => 'Шатура',
+            'images' => 2,
+            'spec' => ['width_cm' => 78, 'length_cm' => 84, 'height_cm' => 112, 'folding_type' => 'Релакс', 'materials' => 'Велюр', 'weight_kg' => 24, 'package_volume_m3' => 0.65, 'warranty' => '24 месяца'],
         ],
 
         // Пуфы
@@ -703,12 +958,29 @@ class FurnitureSeeder extends Seeder
             'images' => 2,
             'spec' => ['width_cm' => 45, 'length_cm' => 45, 'height_cm' => 42, 'materials' => 'Рогожка, ППУ', 'weight_kg' => 5, 'package_volume_m3' => 0.09, 'warranty' => '12 месяцев'],
         ],
+        [
+            'name' => 'Пуф цилиндр Классик',
+            'description' => 'Цилиндрический пуф с жёстким каркасом и съёмным чехлом из рогожки.',
+            'color' => 'Серый',
+            'price' => 4200.00,
+            'quantity' => 14,
+            'category' => 'Пуфы',
+            'manufacturer' => 'Много мебели',
+            'images' => 2,
+            'spec' => ['width_cm' => 45, 'length_cm' => 45, 'height_cm' => 45, 'materials' => 'Рогожка, ППУ', 'weight_kg' => 4, 'package_volume_m3' => 0.08, 'warranty' => '12 месяцев'],
+        ],
     ];
 
     public function run(): void
     {
-        $this->seedManufacturers();
-        $this->seedItems();
+        Model::withoutEvents(function (): void {
+            $this->seedManufacturers();
+            $this->seedItems();
+
+            if (config('elasticsearch.enabled')) {
+                Artisan::call('search:reindex', ['--no-interaction' => true]);
+            }
+        });
     }
 
     private function seedManufacturers(): void
@@ -750,42 +1022,82 @@ class FurnitureSeeder extends Seeder
             $furniture->update(['specifications_id' => $spec->id]);
 
             $furniture->images()->delete();
-            $this->seedImages($furniture, $item, $item['images']);
+            $this->seedImages($furniture, $item);
         }
     }
 
     /**
-     * Generate furniture photos with OpenAI DALL-E 3 and persist them.
+     * Generate exactly IMAGE_COUNT photos for the furniture item. Tries DALL-E
+     * first, tops up with real photographs from Openverse, and pads any
+     * remaining slots with catalog SVG illustrations, so every item always
+     * ends up with the full gallery of five pictures.
      *
      * @param  array<string, mixed>  $item
      */
-    private function seedImages(Furniture $furniture, array $item, int $count): void
+    private function seedImages(Furniture $furniture, array $item): void
     {
         $slug = $this->slug($item['name']);
+        $index = 0;
 
-        for ($index = 0; $index < $count; $index++) {
-            $prompt = $this->buildPrompt($item, $index + 1);
-            $imageData = $this->generateWithDalle($prompt);
+        if ($this->dalleConfigured()) {
+            $index = $this->seedWithDalle($furniture, $slug, $item, $index);
+        }
+
+        if ($index < self::IMAGE_COUNT) {
+            $index = $this->seedWithOpenverse($furniture, $item, $slug, $index);
+        }
+
+        if ($index < self::IMAGE_COUNT) {
+            $this->seedFallbackSvg($furniture, $item['name'], $slug, $index);
+        }
+    }
+
+    /**
+     * Generate one photo per remaining slot with OpenAI DALL-E 3.
+     *
+     * @param  array<string, mixed>  $item
+     */
+    private function seedWithDalle(Furniture $furniture, string $slug, array $item, int $index): int
+    {
+        for (; $index < self::IMAGE_COUNT; $index++) {
+            $imageData = $this->generateWithDalle($this->buildPrompt($item, $index + 1));
 
             if ($imageData === null || $imageData === '') {
-                $this->seedFallbackSvg($furniture, $item['name'], $count);
-
-                return;
+                break;
             }
 
-            $filename = "{$slug}-".($index + 1).'.png';
-            $path = "furniture/{$filename}";
-
-            Storage::disk('public')->put($path, $imageData);
-
-            FurnitureImage::create([
-                'furniture_id' => $furniture->furniture_id,
-                'path_image' => $path,
-                'is_main' => $index === 0,
-            ]);
+            $this->storeImage($furniture, $slug, 'png', $imageData, $index);
 
             sleep(2);
         }
+
+        return $index;
+    }
+
+    /**
+     * Persist raw image bytes to the local storage and create a model row.
+     */
+    private function storeImage(Furniture $furniture, string $slug, string $extension, string $data, int $index): void
+    {
+        $path = "furniture/{$slug}-".($index + 1).".{$extension}";
+
+        Storage::disk('public')->put($path, $data);
+
+        FurnitureImage::create([
+            'furniture_id' => $furniture->furniture_id,
+            'path_image' => $path,
+            'is_main' => $index === 0,
+        ]);
+    }
+
+    /**
+     * Whether an OpenAI API key is configured and can be used for DALL-E.
+     */
+    private function dalleConfigured(): bool
+    {
+        $apiKey = config('services.openai.api_key');
+
+        return filled($apiKey) && $apiKey !== 'your_openai_api_key_here';
     }
 
     /**
@@ -799,7 +1111,7 @@ class FurnitureSeeder extends Seeder
         $categoryEn = self::CATEGORY_EN[$categoryName] ?? 'modern furniture';
         $colorEn = self::COLOR_EN[$item['color'] ?? ''] ?? 'natural wood';
         $materialsEn = self::MATERIAL_EN[$item['spec']['materials'] ?? ''] ?? 'quality materials';
-        $angles = ['front view', 'three-quarter angle', 'side view'];
+        $angles = ['front view', 'three-quarter angle', 'side view', 'close-up detail', 'interior room setting'];
         $angle = $angles[$viewIndex - 1] ?? $angles[0];
         $furnitureName = $this->toEnglishName($item['name']);
 
@@ -907,6 +1219,26 @@ class FurnitureSeeder extends Seeder
             'Пуф квадратный Вельвет' => 'Square velvet pouf',
             'Пуф-банкетка с ящиком' => 'Storage ottoman bench',
             'Пуф круглый Кокос' => 'Round Cocos pouf',
+            'Тумба прикроватная Норд' => 'Nord nightstand',
+            'Кровать детская Малыш 70x140' => 'Malysh kids bed 70x140',
+            'Кухонный гарнитур Виктория' => 'Victoria kitchen set',
+            'Стол для переговоров Капитолий' => 'Capitol conference table',
+            'Зеркало для ванной Капля' => 'Kaplya bathroom mirror',
+            'Тумба для ванной Веста' => 'Vesta bathroom cabinet',
+            'Кровать односпальная Орхидея 90x200' => 'Orchidea single bed 90x200',
+            'Шкаф трёхдверный Венеция' => 'Venice three-door wardrobe with mirror',
+            'Стеллаж модульный Лондон 6 полок' => 'London modular bookcase with six shelves',
+            'Прихожая Венеция с сиденьем' => 'Venice hallway set with seat',
+            'Стенка гостиная Прага' => 'Prague living room wall unit',
+            'Стол обеденный Монако 160x90' => 'Monaco dining table 160x90',
+            'Стол-трансформер Гнездо 150x80' => 'Gnezdo folding table 150x80',
+            'Шкаф-купе Прованс 2 двери' => 'Provence two-door sliding wardrobe',
+            'Дверь раздвижная Белое Дерево' => 'White frosted glass sliding door',
+            'Этажерка для книг Лофт' => 'Loft metal bookcase',
+            'Матрас Прованс пружинный 120x200' => 'Provence spring mattress 120x200',
+            'Диван Монако угловой' => 'Monaco corner sofa',
+            'Кресло релакс Орбита' => 'Orbita relaxation armchair',
+            'Пуф цилиндр Классик' => 'Classic cylinder pouf',
         ];
 
         return $known[$name] ?? 'modern '.$this->translateFurnitureType($name);
@@ -953,46 +1285,281 @@ class FurnitureSeeder extends Seeder
     }
 
     /**
-     * SVG placeholder when the image generation API is unavailable or misconfigured.
+     * Search the Openverse API for photographs matching the furniture item and
+     * persist the best results to the local storage. Returns the number of
+     * images persisted, starting from the given index.
+     *
+     * @param  array<string, mixed>  $item
      */
-    private function seedFallbackSvg(Furniture $furniture, string $name, int $count): void
+    private function seedWithOpenverse(Furniture $furniture, array $item, string $slug, int $index): int
     {
-        $base = $this->slug($name);
-        $color = self::COLOR_HEX[$furniture->color] ?? '#a08c7a';
-        $category = $furniture->category->name ?? 'Мебель';
-
-        foreach (range(1, $count) as $index) {
-            $path = "furniture/{$base}-{$index}.svg";
-
-            Storage::disk('public')->put($path, $this->buildPlaceholderSvg($name, $category, $color));
-
-            FurnitureImage::create([
-                'furniture_id' => $furniture->furniture_id,
-                'path_image' => $path,
-                'is_main' => $index === 1,
-            ]);
+        if ($this->openverseFailures >= self::OPENVERSE_FAILURE_LIMIT) {
+            $this->openverseAvailable = false;
         }
+
+        if (! $this->openverseAvailable) {
+            return $index;
+        }
+
+        foreach ($this->openverseQueries($item) as $query) {
+            if ($query === '') {
+                continue;
+            }
+
+            $results = $this->searchOpenverse($query, 30);
+
+            if ($results === null || $results === []) {
+                continue;
+            }
+
+            $index = $this->persistOpenverseResults($furniture, $item, $slug, $index, $query, $results);
+
+            if ($index >= self::IMAGE_COUNT) {
+                break;
+            }
+        }
+
+        return $index;
     }
 
-    private function buildPlaceholderSvg(string $name, string $category, string $color): string
+    /**
+     * Build prioritized Openverse search queries for the furniture item. The
+     * keywords are always common English furniture terms, because long phrases
+     * return no matches.
+     *
+     * @param  array<string, mixed>  $item
+     * @return string[]
+     */
+    private function openverseQueries(array $item): array
     {
-        $safeName = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
-        $safeCategory = htmlspecialchars($category, ENT_QUOTES, 'UTF-8');
+        $typeEn = $this->translateFurnitureType($item['name']);
+        $categoryEn = self::CATEGORY_EN[$item['category']] ?? 'furniture';
+        $colorEn = self::COLOR_EN[$item['color'] ?? ''] ?? '';
 
-        return <<<SVG
-        <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
-          <defs>
-            <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="{$color}" stop-opacity="0.9"/>
-              <stop offset="100%" stop-color="{$color}" stop-opacity="0.55"/>
-            </linearGradient>
-          </defs>
-          <rect width="800" height="600" fill="url(#bg)"/>
-          <rect x="40" y="40" width="720" height="520" fill="none" stroke="#ffffff" stroke-opacity="0.4" stroke-width="2" rx="8"/>
-          <text x="400" y="295" font-family="Arial, sans-serif" font-size="34" font-weight="bold" fill="#ffffff" text-anchor="middle">{$safeName}</text>
-          <text x="400" y="330" font-family="Arial, sans-serif" font-size="20" fill="#ffffff" fill-opacity="0.85" text-anchor="middle">{$safeCategory}</text>
-        </svg>
-        SVG;
+        $keywords = array_values(array_unique(array_filter([
+            $typeEn !== 'furniture piece' ? $typeEn : null,
+            $this->primaryCategoryTerm($categoryEn),
+            $colorEn,
+        ])));
+
+        if ($keywords === []) {
+            return [];
+        }
+
+        return [
+            implode(' ', array_slice($keywords, 0, min(2, count($keywords)))),
+            implode(' ', array_slice($keywords, 0, min(3, count($keywords)))),
+            $keywords[0],
+        ];
+    }
+
+    private function primaryCategoryTerm(string $category): string
+    {
+        return trim(explode(',', $category)[0]);
+    }
+
+    /**
+     * Download and persist the best Openverse results for a single item.
+     * Photographs containing people, 3D renders, and images already assigned to
+     * another item are rejected; the rest are ranked by how well the title and
+     * tags match the furniture keywords.
+     *
+     * @param  array<string, mixed>  $item
+     * @param  array<int, array<string, mixed>>  $results
+     */
+    private function persistOpenverseResults(Furniture $furniture, array $item, string $slug, int $index, string $query, array $results): int
+    {
+        $colorEn = self::COLOR_EN[$item['color'] ?? ''] ?? '';
+        $keywords = collect(explode(' ', $query))
+            ->reject(fn (string $token): bool => in_array($token, self::STOP_WORDS, true) || $token === '')
+            ->unique();
+
+        $candidates = collect($results)
+            ->reject(fn (array $image): bool => $this->hasPeople($image) || strtolower((string) ($image['provider'] ?? '')) === 'sketchfab')
+            ->filter(fn (array $image): bool => filled($image['url'] ?? null) && ($image['mature'] ?? false) === false)
+            ->map(fn (array $image): array => [
+                'image' => $image,
+                'rank' => $this->scoreImageCandidate($image, $keywords, $colorEn),
+                'area' => (int) ($image['width'] ?? 0) * (int) ($image['height'] ?? 0),
+            ])
+            ->filter(fn (array $entry): bool => $entry['rank'] > 0 && ! isset($this->usedImageUrls[$entry['image']['url']]))
+            ->sortByDesc('rank')
+            ->sortByDesc('area')
+            ->values();
+
+        foreach ($candidates as $entry) {
+            if ($index >= self::IMAGE_COUNT) {
+                break;
+            }
+
+            $image = $entry['image'];
+            $imageData = $this->downloadImage($image['url']);
+
+            if ($imageData === null) {
+                continue;
+            }
+
+            $this->usedImageUrls[$image['url']] = true;
+
+            $extension = $this->extensionFromUrl($image['url']);
+            $this->storeImage($furniture, $slug, $extension, $imageData, $index);
+
+            $index++;
+
+            usleep(300000);
+        }
+
+        return $index;
+    }
+
+    /**
+     * Reject photographs that likely contain people, based on the image title
+     * and tags.
+     *
+     * @param  array<string, mixed>  $image
+     */
+    private function hasPeople(array $image): bool
+    {
+        $text = mb_strtolower(
+            (string) ($image['title'] ?? '').' '.implode(' ', array_column($image['tags'] ?? [], 'name')),
+        );
+
+        return (bool) preg_match(self::PERSON_PATTERN, $text);
+    }
+
+    /**
+     * Rank how well a photograph matches the searched furniture keywords.
+     * A keyword appearing in the title weighs more than a tag match, and a
+     * matching furniture color gives a small bonus.
+     *
+     * @param  array<string, mixed>  $image
+     * @param  iterable<string>  $keywords
+     */
+    private function scoreImageCandidate(array $image, iterable $keywords, string $colorEn): int
+    {
+        $title = mb_strtolower((string) ($image['title'] ?? ''));
+        $tags = mb_strtolower(implode(' ', array_column($image['tags'] ?? [], 'name')));
+        $score = 0;
+
+        foreach ($keywords as $keyword) {
+            if (str_contains($title, $keyword)) {
+                $score += 4;
+            } elseif (str_contains($tags, $keyword)) {
+                $score += 2;
+            }
+        }
+
+        if ($colorEn !== '') {
+            foreach (explode(' ', $colorEn) as $word) {
+                if ($word === '') {
+                    continue;
+                }
+
+                if (str_contains($title, $word) || str_contains($tags, $word)) {
+                    $score += 1;
+
+                    break;
+                }
+            }
+        }
+
+        return $score;
+    }
+
+    /**
+     * Query the Openverse image search API and return the raw results array, or
+     * null when the request could not be completed.
+     *
+     * @return array<int, array<string, mixed>>|null
+     */
+    private function searchOpenverse(string $query, int $pageSize): ?array
+    {
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            if ($attempt > 0) {
+                sleep(2);
+            }
+
+            try {
+                $response = Http::withHeaders(['User-Agent' => 'ArchiWeb furniture seeder'])
+                    ->timeout(60)
+                    ->get('https://api.openverse.org/v1/images/', [
+                        'q' => $query,
+                        'page_size' => $pageSize,
+                        'categories' => 'photograph',
+                    ]);
+            } catch (Throwable) {
+                $this->openverseFailures++;
+
+                continue;
+            }
+
+            if ($response->status() === 429) {
+                $this->openverseFailures++;
+                sleep(1);
+
+                continue;
+            }
+
+            if ($response->failed() || $response->json() === null) {
+                $this->openverseFailures++;
+
+                continue;
+            }
+
+            $this->openverseFailures = 0;
+
+            return $response->json('results') ?? [];
+        }
+
+        return null;
+    }
+
+    /**
+     * Download the raw image bytes from an external URL.
+     */
+    private function downloadImage(string $url): ?string
+    {
+        try {
+            $response = Http::timeout(30)->get($url);
+        } catch (Throwable) {
+            return null;
+        }
+
+        if ($response->failed() || $response->body() === '') {
+            return null;
+        }
+
+        return $response->body();
+    }
+
+    /**
+     * Resolve a safe file extension from an image URL, defaulting to jpg.
+     */
+    private function extensionFromUrl(string $url): string
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        $extension = mb_strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+
+        return in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'], true)
+            ? $extension
+            : 'jpg';
+    }
+
+    /**
+     * Catalog SVG illustrations when image generation is unavailable or has not
+     * produced enough photos. Each picture actually depicts the furniture item
+     * from a different angle. Pads the gallery up to IMAGE_COUNT images.
+     */
+    private function seedFallbackSvg(Furniture $furniture, string $name, string $slug, int $index): void
+    {
+        $color = self::COLOR_HEX[$furniture->color] ?? '#a08c7a';
+        $category = $furniture->category->name ?? 'Мебель';
+        $renderer = new FurnitureSvgRenderer;
+
+        while ($index < self::IMAGE_COUNT) {
+            $this->storeImage($furniture, $slug, 'svg', $renderer->render($name, $category, $color, $index + 1), $index);
+            $index++;
+        }
     }
 
     private function slug(string $name): string

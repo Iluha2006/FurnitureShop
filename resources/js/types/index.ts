@@ -1,4 +1,5 @@
 export type * from './auth';
+export type * from './cart';
 export type * from './furniture';
 export type * from './navigation';
 export type * from './teams';

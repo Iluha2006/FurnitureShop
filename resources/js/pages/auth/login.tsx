@@ -1,7 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
-import PasskeyVerify from '@/components/passkey-verify';
 import TeamInvitationAlert from '@/components/team-invitation-alert';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -36,8 +35,6 @@ export default function Login({
                 />
             )}
 
-            <PasskeyVerify />
-
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
@@ -61,12 +58,18 @@ export default function Login({
                                     placeholder="email@example.com"
                                     className="auth-input"
                                 />
-                                <InputError message={errors.email} className="auth-error" />
+                                <InputError
+                                    message={errors.email}
+                                    className="auth-error"
+                                />
                             </div>
 
                             <div className="auth-field">
                                 <div className="auth-row">
-                                    <Label htmlFor="password" className="auth-label">
+                                    <Label
+                                        htmlFor="password"
+                                        className="auth-label"
+                                    >
                                         Пароль
                                     </Label>
                                     {canResetPassword && (
@@ -88,7 +91,10 @@ export default function Login({
                                     placeholder="Пароль"
                                     className="auth-input"
                                 />
-                                <InputError message={errors.password} className="auth-error" />
+                                <InputError
+                                    message={errors.password}
+                                    className="auth-error"
+                                />
                             </div>
 
                             <div className="auth-row auth-row--check">
@@ -98,7 +104,10 @@ export default function Login({
                                     tabIndex={3}
                                     className="auth-checkbox"
                                 />
-                                <Label htmlFor="remember" className="auth-label">
+                                <Label
+                                    htmlFor="remember"
+                                    className="auth-label"
+                                >
                                     Запомнить меня
                                 </Label>
                             </div>
@@ -134,9 +143,7 @@ export default function Login({
                 )}
             </Form>
 
-            {status && (
-                <div className="auth-status">{status}</div>
-            )}
+            {status && <div className="auth-status">{status}</div>}
         </>
     );
 }

@@ -13,11 +13,12 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $category_id
  * @property string $name
+ * @property string|null $image_url
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, Furniture> $furniture
  */
-#[Fillable(['name'])]
+#[Fillable(['name', 'image_url'])]
 class FurnitureCategory extends Model
 {
     /** @use HasFactory<FurnitureCategoryFactory> */
