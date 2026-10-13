@@ -23,9 +23,6 @@ use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         $this->app->bind(QueryBusInterface::class, function (Application $app): QueryBusInterface {
@@ -44,9 +41,7 @@ class AppServiceProvider extends ServiceProvider
             ->build());
     }
 
-    /**
-     * Bootstrap any application services.
-     */
+   
     public function boot(): void
     {
         if (config('elasticsearch.enabled')) {
@@ -56,9 +51,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
     }
 
-    /**
-     * Configure default behaviors for production-ready applications.
-     */
+   
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
