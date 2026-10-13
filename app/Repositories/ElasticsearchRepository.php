@@ -13,6 +13,11 @@ class ElasticsearchRepository
 {
     public function __construct(private readonly Client $elasticsearch) {}
 
+    /**
+     * Search the furniture index and hydrate matching models from the database.
+     *
+     * @return Collection<int, Furniture>
+     */
     public function search(string $query = '', int $limit = 50): Collection
     {
         $query = trim($query);
@@ -24,6 +29,11 @@ class ElasticsearchRepository
         return $this->buildCollection($this->searchOnElasticsearch($query, $limit));
     }
 
+    /**
+     * Raw search response, in the shape Elasticsearch returns.
+     *
+     * @return array<string, mixed>
+     */
     private function searchOnElasticsearch(string $query, int $limit): array
     {
         $items = $this->elasticsearch->search([
@@ -46,6 +56,12 @@ class ElasticsearchRepository
         return $items->asArray();
     }
 
+    /**
+     * Resolve raw hits to models, keeping the relevance order of the search.
+     *
+     * @param  array<string, mixed>  $items
+     * @return Collection<int, Furniture>
+     */
     private function buildCollection(array $items): Collection
     {
         $ids = Arr::pluck($items['hits']['hits'], '_id');

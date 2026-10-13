@@ -24,7 +24,10 @@ return [
 
     'search' => [
         'enabled' => env('ELASTICSEARCH_ENABLED', false),
-        'hosts' => explode(',', env('ELASTICSEARCH_HOSTS')),
+        'hosts' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('ELASTICSEARCH_HOSTS', '')),
+        ))),
     ],
     'pexels' => [
         'key' => env('YANDEX_SEARCH_API_KEY'),

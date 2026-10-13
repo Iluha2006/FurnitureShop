@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Data\Filter\FurnitureFilterData;
+use App\Data\FurnitureCardData;
 use App\Data\FurnitureCategoryData;
 use App\Interfaces\QueryBusInterface;
 use App\Models\FurnitureCategory;
@@ -92,6 +93,11 @@ class FurnitureController extends Controller
         ]);
     }
 
+    /**
+     * Props for the category listing page.
+     *
+     * @return array<string, mixed>
+     */
     private function catalogPageProps(int $categoryId, Request $request): array
     {
         $categories = $this->queryBus->ask(new GetCategoriesQuery);
@@ -105,6 +111,11 @@ class FurnitureController extends Controller
         ];
     }
 
+    /**
+     * Paginated, filtered furniture for the category listing page.
+     *
+     * @return LengthAwarePaginator<int, FurnitureCardData>
+     */
     private function catalogFurniture(int $categoryId, Request $request): LengthAwarePaginator
     {
         return $this->queryBus->ask(

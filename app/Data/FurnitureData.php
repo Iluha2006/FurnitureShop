@@ -28,7 +28,7 @@ class FurnitureData extends Data
             name: $furniture->name,
             description: $furniture->description,
             color: $furniture->color,
-            price: $furniture->price,
+            price: (string) $furniture->price,
             quantity: $furniture->quantity,
             manufacturer_id: $furniture->manufacturer_id,
             category_id: $furniture->category_id,

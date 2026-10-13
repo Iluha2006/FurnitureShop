@@ -6,6 +6,12 @@ use Spatie\LaravelData\Data;
 
 class FilterOptionsData extends Data
 {
+    /**
+     * @param  array<int, SortOptionData>  $folding_type
+     * @param  array<int, SortOptionData>  $surface
+     * @param  array<int, SortOptionData>  $materials
+     * @param  array<int, SortOptionData>  $manufacture
+     */
     public function __construct(
         public readonly PriceRangeData $price_range,
         public readonly WidthRangeData $widthRangeData,

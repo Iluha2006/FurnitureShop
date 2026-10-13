@@ -3,31 +3,39 @@
 namespace App\Search;
 
 use Elastic\Elasticsearch\Client;
-use Elastic\Elasticsearch\Response\Elasticsearch;
 use Illuminate\Database\Eloquent\Model;
 
 class ElasticsearchObserver
 {
-    public function __construct(private readonly Client $elasticsearch) {}
+    public function __construct(
+        private readonly Client $elasticsearch,
+        private readonly IndexManager $indexManager,
+    ) {
+        //
+    }
 
     /**
-     * @param  Model&Searchable  $model
+     * Keep the index in step with a saved model.
      */
-    public function saved(Model $model): Elasticsearch
+    public function saved(Model&Indexable $model): void
     {
-        return $this->elasticsearch->index([
-            'index' => $model->getSearchIndex(),
+        $index = $model->getSearchIndex();
+
+        $this->indexManager->createIfMissing($index);
+
+        $this->elasticsearch->index([
+            'index' => $index,
             'id' => $model->getKey(),
             'body' => $model->toSearchArray(),
         ]);
     }
 
     /**
-     * @param  Model&Searchable  $model
+     * Drop a deleted model from the index.
      */
-    public function deleted(Model $model): Elasticsearch
+    public function deleted(Model&Indexable $model): void
     {
-        return $this->elasticsearch->delete([
+        $this->elasticsearch->delete([
             'index' => $model->getSearchIndex(),
             'id' => $model->getKey(),
         ]);

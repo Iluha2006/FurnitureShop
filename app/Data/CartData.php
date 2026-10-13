@@ -8,6 +8,9 @@ use Illuminate\Support\Collection;
 
 readonly class CartData
 {
+    /**
+     * @param  array<int, CartItemData>  $items
+     */
     public function __construct(
         public array $items,
         public string $total,
@@ -17,6 +20,9 @@ readonly class CartData
         //
     }
 
+    /**
+     * @param  Collection<int, CartItem>  $items
+     */
     public static function fromItems(Collection $items): self
     {
         $first = $items->first();

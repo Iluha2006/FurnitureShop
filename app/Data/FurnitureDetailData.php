@@ -7,6 +7,9 @@ use App\Models\FurnitureImage;
 
 readonly class FurnitureDetailData
 {
+    /**
+     * @param  array<int, FurnitureImageData>  $images
+     */
     public function __construct(
         public FurnitureData $furniture,
         public ?FurnitureCategoryData $category = null,

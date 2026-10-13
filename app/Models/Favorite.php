@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\FavoriteFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,13 +21,24 @@ use Illuminate\Support\Carbon;
 #[Fillable(['user_id', 'furniture_id'])]
 class Favorite extends Model
 {
+    /** @use HasFactory<FavoriteFactory> */
     use HasFactory;
 
+    /**
+     * Get the user who favourited the furniture.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Get the favourited furniture.
+     *
+     * @return BelongsTo<Furniture, $this>
+     */
     public function furniture(): BelongsTo
     {
         return $this->belongsTo(Furniture::class, 'furniture_id', 'furniture_id');

@@ -9,6 +9,7 @@ use App\Models\Furniture;
 use App\Repositories\Contracts\FurnitureRepositoryContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Collection;
 
@@ -114,6 +115,11 @@ class FurnitureRepository extends BaseRepository implements FurnitureRepositoryC
         return $this->query()->where('furniture.quantity', '>', 0);
     }
 
+    /**
+     * Narrow the query by the active catalog filters.
+     *
+     * @param  Builder<Furniture>  $query
+     */
     protected function applyFilters(Builder $query, ?FurnitureFilterData $filter): void
     {
         if ($filter === null || ! $filter->hasActiveFilters()) {
@@ -135,6 +141,11 @@ class FurnitureRepository extends BaseRepository implements FurnitureRepositoryC
         $this->applySpecificationFilters($query, $filter);
     }
 
+    /**
+     * Narrow the query by the active characteristic filters.
+     *
+     * @param  Builder<Furniture>  $query
+     */
     protected function applySpecificationFilters(Builder $query, FurnitureFilterData $filter): void
     {
         $hasSpecFilters = $filter->width_min !== null
@@ -195,12 +206,15 @@ class FurnitureRepository extends BaseRepository implements FurnitureRepositoryC
      * columns, so characteristics filters and sorts do not leak spec columns
      * into hydrated models or duplicate rows.
      *
+     * @param  Builder<Furniture>  $query
      * @return Builder<Furniture>
      */
     protected function joinSpecifications(Builder $query): Builder
     {
         $alreadyJoined = collect($query->getQuery()->joins ?? [])->contains(
-            fn (JoinClause $join) => (string) $join->table === 'furniture_specifications',
+            fn (JoinClause $join) => $join->table instanceof Expression
+                ? false
+                : $join->table === 'furniture_specifications',
         );
 
         if (! $alreadyJoined) {
