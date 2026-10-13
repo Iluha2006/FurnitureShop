@@ -9,8 +9,11 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=5432
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - APP_URL=http://localhost:8080
+      # public/hot points at localhost:5173, which is not reachable from this
+      # container. In dev the Vite plugin serves SSR, so route Laravel at the
+      # vite service instead.
+      - INERTIA_SSR_HOT_URL=http://vite:5173
     # Dev: live sync of host sources — code changes are picked up on the fly.
     # No image rebuild / volume reset needed after editing files.
     volumes:
@@ -18,8 +21,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
+      vite:
+        condition: service_started
+    # Elasticsearch/Logstash/Kibana live in the separate archiweb-elk project
+    # (docker-compose_elk.yml) and are reached through the host port mapping.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - archiweb
 
@@ -52,13 +59,41 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=5432
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - APP_URL=http://localhost:8080
     volumes:
       - ./:/var/www/html
     ports:
       - "5173:5173"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: sh -c "npm run dev -- --host 0.0.0.0 --port 5173"
+    networks:
+      - archiweb
+
+  # Production only: the Node process that renders pages to HTML. Requires
+  # `npm run build:ssr` (bootstrap/ssr/app.js) to have run first, and public/hot
+  # to be absent so Laravel talks to the production SSR URL instead. In dev the
+  # vite service above serves SSR, so this service stays stopped.
+  ssr:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+    image: archiweb-vite:latest
+    restart: unless-stopped
+    profiles: ["ssr"]
+    working_dir: /var/www/html
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - APP_URL=http://localhost:8080
+      - INERTIA_SSR_URL=http://ssr:13714
+    volumes:
+      - ./:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "php artisan inertia:start-ssr"
     networks:
       - archiweb
 
@@ -80,84 +115,8 @@ services:
     networks:
       - archiweb
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.0
-    restart: unless-stopped
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ports:
-      - "9200:9200"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    volumes:
-      - esdata:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/9200'"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 30s
-    networks:
-      - archiweb
-
-  # Logstash: receives logs from Filebeat (beats -> 5044) and ships them to ES.
-  logstash:
-    image: docker.elastic.co/logstash/logstash:9.5.0
-    restart: unless-stopped
-    volumes:
-      - ./docker/logs/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
-      - ./docker/logs/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
-    ports:
-      - "5044:5044"
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    networks:
-      - archiweb
-
-  # Kibana: web UI for exploring logs and dashboards (http://localhost:5601).
-  kibana:
-    image: docker.elastic.co/kibana/kibana:9.5.0
-    restart: unless-stopped
-    environment:
-      - SERVER_HOST=0.0.0.0
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    ports:
-      - "5601:5601"
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    networks:
-      - archiweb
-
-  # Filebeat: tails the JSON logs of every container (stdout/stderr of php-fpm
-  # and nginx) and forwards them to Logstash on port 5044.
-  filebeat:
-    build:
-      context: ./docker/logs
-      dockerfile: Dockerfile_filebeat
-    image: archiweb-filebeat:latest
-    restart: unless-stopped
-    user: root
-    volumes:
-      - ./docker/logs/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - logstash
-    networks:
-      - archiweb
-
 volumes:
   pgdata:
-  esdata:
 
 networks:
   archiweb:

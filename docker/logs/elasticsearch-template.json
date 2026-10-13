@@ -1,0 +1,42 @@
+{
+    "index_patterns": ["archiweb-app-logs-*"],
+    "priority": 200,
+    "version": 1,
+    "_meta": {
+        "managed": true,
+        "description": "ArchiWeb application logs index template"
+    },
+    "template": {
+        "settings": {
+            "analysis": {
+                "filter": {
+                    "russian_stemmer": {
+                        "type": "stemmer",
+                        "language": "russian"
+                    }
+                },
+                "analyzer": {
+                    "russian_text": {
+                        "type": "custom",
+                        "tokenizer": "standard",
+                        "filter": ["lowercase", "russian_stemmer"]
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "properties": {
+                "message": {
+                    "type": "text",
+                    "analyzer": "russian_text",
+                    "fields": {
+                        "keyword": {
+                            "type": "keyword",
+                            "ignore_above": 256
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

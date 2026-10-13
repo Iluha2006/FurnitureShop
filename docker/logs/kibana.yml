@@ -1,0 +1,4 @@
+telemetry.optIn: true
+telemetry.allowChangingOptInStatus: false
+elasticsearch.hosts: ['http://elasticsearch:9200']
+enterpriseSearch.host: 'http://elasticsearch:9200'

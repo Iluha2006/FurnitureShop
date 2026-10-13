@@ -1,4 +1,4 @@
-http.host: "0.0.0.0"
+api.http.host: '0.0.0.0'
 config.reload.automatic: false
 xpack.monitoring.enabled: true
-xpack.monitoring.elasticsearch.hosts: ["http://elasticsearch:9200"]
+xpack.monitoring.elasticsearch.hosts: ['http://elasticsearch:9200']

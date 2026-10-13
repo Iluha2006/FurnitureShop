@@ -1,0 +1,117 @@
+name: archiweb-elk
+
+services:
+    elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.25
+        platform: linux/amd64
+        restart: unless-stopped
+        environment:
+            - discovery.type=single-node
+            - xpack.security.enabled=false
+            - ES_JAVA_OPTS=-Xms512m -Xmx512m
+        ports:
+            - '9200:9200'
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+            nofile:
+                soft: 65536
+                hard: 65536
+        volumes:
+            - esdata:/usr/share/elasticsearch/data
+        healthcheck:
+            test:
+                [
+                    'CMD-SHELL',
+                    'curl -sf http://127.0.0.1:9200/_cluster/health || exit 1',
+                ]
+            interval: 10s
+            timeout: 5s
+            retries: 30
+            start_period: 30s
+        networks:
+            - elk_stack
+
+    logstash:
+        image: docker.elastic.co/logstash/logstash:7.17.25
+        platform: linux/amd64
+        restart: unless-stopped
+        environment:
+            - LS_JAVA_OPTS=-Xms512m -Xmx512m
+        volumes:
+            - ./docker/logs/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+            - ./docker/logs/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+            - ./docker/logs/elasticsearch-template.json:/usr/share/logstash/config/elasticsearch-template.json:ro
+        ports:
+            - '5044:5044'
+        depends_on:
+            elasticsearch:
+                condition: service_healthy
+        networks:
+            - elk_stack
+
+    kibana:
+        image: docker.elastic.co/kibana/kibana:7.17.25
+        platform: linux/amd64
+        restart: unless-stopped
+        environment:
+            - SERVER_HOST=0.0.0.0
+            - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+            - NODE_OPTIONS=--max-old-space-size=1024
+        volumes:
+            - ./docker/logs/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+        ports:
+            - '5601:5601'
+        healthcheck:
+            # Kibana 7.17 reports readiness as status.overall.state, not the
+            # "level":"available" field used by 8.x. Green can be flaky on a
+            # single node, so yellow is accepted as available too.
+            test:
+                [
+                    'CMD-SHELL',
+                    'curl -sf http://127.0.0.1:5601/api/status | grep -qE ''"state":"(green|yellow)"'' || exit 1',
+                ]
+            interval: 15s
+            timeout: 10s
+            retries: 40
+            start_period: 30s
+        depends_on:
+            elasticsearch:
+                condition: service_healthy
+        networks:
+            - elk_stack
+
+    filebeat:
+        build:
+            context: ./docker/logs
+            dockerfile: Dockerfile_filebeat
+        platform: linux/amd64
+        image: archiweb-filebeat:latest
+        restart: unless-stopped
+        user: root
+        volumes:
+            # Mounted as a template, not as the live config: Filebeat refuses to
+            # start when its config is group/world writable, and a bind mount
+            # overrides the chmod in the image with the host file's mode.
+            - ./docker/logs/filebeat.yml:/usr/share/filebeat/filebeat.yml.template:ro
+            - /var/lib/docker/containers:/var/lib/docker/containers:ro
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - esdata:/usr/share/elasticsearch/logs:ro
+        command:
+            - bash
+            - -c
+            - |
+                install -m 0600 /usr/share/filebeat/filebeat.yml.template /usr/share/filebeat/filebeat.yml
+                exec /usr/share/filebeat/filebeat -e
+        depends_on:
+            - logstash
+        networks:
+            - elk_stack
+
+volumes:
+    esdata:
+
+networks:
+    elk_stack:
+        driver: bridge
