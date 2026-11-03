@@ -15,6 +15,12 @@ enum OrderStatus: string
      */
     public function label(): string
     {
-        return ucfirst($this->value);
+        return match ($this) {
+            self::Pending => 'Ожидает подтверждения',
+            self::Processing => 'В обработке',
+            self::Shipped => 'Отправлен',
+            self::Delivered => 'Доставлен',
+            self::Cancelled => 'Отменён',
+        };
     }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Account\FavoriteController;
 use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FurnitureCategoryController;
 use App\Http\Controllers\FurnitureController;
@@ -48,6 +49,11 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->prefix('account')->name('account.')->group(function () {
     Route::get('orders', [OrderController::class, 'index'])->name('orders');
     Route::get('favorites', [FavoriteController::class, 'index'])->name('favorites');
+});
+
+Route::middleware(['auth'])->prefix('checkout')->name('checkout.')->group(function () {
+    Route::get('/', [CheckoutController::class, 'index'])->name('index');
+    Route::post('/', [CheckoutController::class, 'store'])->name('store');
 });
 
 Route::middleware(['auth'])->prefix('cart')->name('cart.')->group(function () {

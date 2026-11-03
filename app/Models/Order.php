@@ -15,6 +15,11 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property int $user_id
+ * @property string|null $customer_name
+ * @property string|null $customer_phone
+ * @property string|null $customer_email
+ * @property string|null $delivery_address
+ * @property string|null $comment
  * @property OrderStatus $status
  * @property string $total_amount
  * @property string $total_currency
@@ -23,7 +28,17 @@ use Illuminate\Support\Carbon;
  * @property-read User $user
  * @property-read Collection<int, OrderItem> $items
  */
-#[Fillable(['user_id', 'status', 'total_amount', 'total_currency'])]
+#[Fillable([
+    'user_id',
+    'customer_name',
+    'customer_phone',
+    'customer_email',
+    'delivery_address',
+    'comment',
+    'status',
+    'total_amount',
+    'total_currency',
+])]
 class Order extends Model
 {
     /** @use HasFactory<OrderFactory> */
