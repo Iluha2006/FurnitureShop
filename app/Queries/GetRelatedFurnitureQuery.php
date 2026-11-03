@@ -26,6 +26,8 @@ final class GetRelatedFurnitureQuery implements CacheableQuery
 
     public function cacheTtlSeconds(): int
     {
+        // Random ordering is expensive, while the section tolerates slightly
+        // stale suggestions.
         return 900;
     }
 

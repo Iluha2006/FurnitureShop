@@ -23,7 +23,9 @@ final class GetFurnitureSpecificationsQuery implements CacheableQuery
 
     public function cacheTtlSeconds(): int
     {
-        return 1800;
+        // Specifications are almost immutable; still tag-invalidated when the
+        // catalogue changes.
+        return 3600;
     }
 
     public function cacheTags(): array

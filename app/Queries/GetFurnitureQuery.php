@@ -23,6 +23,8 @@ final class GetFurnitureQuery implements CacheableQuery
 
     public function cacheTtlSeconds(): int
     {
+        // Eager-loads category, manufacturer and images — the hottest and
+        // most expensive read. Invalidated by the catalogue tag on writes.
         return 1800;
     }
 

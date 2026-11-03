@@ -4,9 +4,6 @@ namespace App\Queries;
 
 use App\Interfaces\CacheableQuery;
 
-/**
- * @return int
- */
 final class GetAvailableFurnitureCountQuery implements CacheableQuery
 {
     public function cacheKey(): string
@@ -16,7 +13,8 @@ final class GetAvailableFurnitureCountQuery implements CacheableQuery
 
     public function cacheTtlSeconds(): int
     {
-        return 1800;
+
+        return 600;
     }
 
     public function cacheTags(): array

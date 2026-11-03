@@ -23,7 +23,9 @@ final class GetFurnitureFilterOptionsQuery implements CacheableQuery
 
     public function cacheTtlSeconds(): int
     {
-        return 1800;
+        // Seven aggregate queries per category — the most expensive read in
+        // the catalogue, and the result changes only when stock changes.
+        return 3600;
     }
 
     public function cacheTags(): array

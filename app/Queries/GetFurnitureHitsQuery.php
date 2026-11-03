@@ -24,7 +24,8 @@ final class GetFurnitureHitsQuery implements CacheableQuery
 
     public function cacheTtlSeconds(): int
     {
-        return 1800;
+        // Rendered on every storefront page; invalidated when stock changes.
+        return 900;
     }
 
     public function cacheTags(): array

@@ -18,6 +18,7 @@ use App\Queries\GetFurnitureQuery;
 use App\Queries\GetFurnitureSpecificationsQuery;
 use App\Queries\GetRelatedFurnitureQuery;
 use App\Repositories\FurnitureSpecificationRepository;
+use App\Support\QueryCacheInvalidator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -147,6 +148,47 @@ test('the cached categories query hits the database only once', function () {
 
     expect($second)->toEqual($first);
     expect(count(DB::getQueryLog()))->toBe($firstQueryCount);
+});
+
+test('invalidating the catalogue tag drops cached query results', function () {
+    $fakeBus = new class implements QueryBusInterface
+    {
+        public int $calls = 0;
+
+        public function ask(QueryInterface $query): mixed
+        {
+            return ++$this->calls;
+        }
+    };
+
+    $cacheable = new class implements CacheableQuery
+    {
+        public function cacheKey(): string
+        {
+            return 'test.catalogue';
+        }
+
+        public function cacheTtlSeconds(): int
+        {
+            return 60;
+        }
+
+        public function cacheTags(): array
+        {
+            return ['furniture'];
+        }
+    };
+
+    $bus = new CachedQueryBus($fakeBus, Cache::store());
+    $invalidator = new QueryCacheInvalidator(Cache::store());
+
+    expect($bus->ask($cacheable))->toBe(1);
+    expect($bus->ask($cacheable))->toBe(1);
+
+    $invalidator->invalidate(['furniture']);
+
+    expect($bus->ask($cacheable))->toBe(2);
+    expect($fakeBus->calls)->toBe(2);
 });
 
 test('furniture details and its specifications resolve through the bus', function () {

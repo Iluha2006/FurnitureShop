@@ -27,6 +27,8 @@ final class GetFurnitureByCategoryQuery implements CacheableQuery
 
     public function cacheTtlSeconds(): int
     {
+        // Filters add joins and sorting, so each page is expensive; the key
+        // already encodes every filter value and the page number.
         return 900;
     }
 

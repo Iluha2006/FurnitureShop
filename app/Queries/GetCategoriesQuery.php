@@ -2,13 +2,8 @@
 
 namespace App\Queries;
 
-use App\Data\FurnitureCategoryData;
 use App\Interfaces\CacheableQuery;
-use Illuminate\Support\Collection;
 
-/**
- * @return Collection<int, FurnitureCategoryData>
- */
 final class GetCategoriesQuery implements CacheableQuery
 {
     public function cacheKey(): string
@@ -23,6 +18,7 @@ final class GetCategoriesQuery implements CacheableQuery
 
     public function cacheTags(): array
     {
-        return ['furniture'];
+
+        return ['categories'];
     }
 }
