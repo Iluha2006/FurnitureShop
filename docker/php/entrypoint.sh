@@ -16,17 +16,9 @@ chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 # Public storage symlink
 php artisan storage:link >/dev/null 2>&1 || true
 
-# Wait for the database to become available
-i=0
-until php artisan db:show >/dev/null 2>&1; do
-    i=$((i + 1))
-    if [ "$i" -ge 30 ]; then
-        echo "Database is not reachable after 60s, continuing anyway."
-        break
-    fi
-    echo "Waiting for database..."
-    sleep 2
-done
+# Wait for the database to become available.
+# The app service already depends_on db with condition: service_healthy,
+# so no extra polling is needed here.
 
 php artisan migrate --force
 
