@@ -6,6 +6,7 @@ import { useCartNotification } from '@/hooks/use-cart-notification';
 import { catalog } from '@/routes';
 import { clear as clearCartRoute, remove as removeRoute } from '@/routes/cart';
 import { show as furnitureShow } from '@/routes/catalog/furniture';
+import { index as checkoutRoute } from '@/routes/checkout';
 import type { CartData, CartItemData } from '@/types';
 
 type Props = {
@@ -14,8 +15,7 @@ type Props = {
 
 export default function CartPage({ cart }: Props) {
     const [pending, setPending] = useState<string | null>(null);
-    const { cleared, failed, removed, checkoutUnavailable } =
-        useCartNotification();
+    const { cleared, failed, removed } = useCartNotification();
 
     const items = cart.items;
     const hasItems = items.length > 0;
@@ -44,10 +44,6 @@ export default function CartPage({ cart }: Props) {
                 onFinish: () => setPending(null),
             },
         );
-    };
-
-    const checkout = (): void => {
-        checkoutUnavailable();
     };
 
     return (
@@ -214,13 +210,12 @@ export default function CartPage({ cart }: Props) {
                                     оформлении заказа.
                                 </p>
 
-                                <button
-                                    type="button"
+                                <Link
+                                    href={checkoutRoute().url}
                                     className="btn btn--primary cart-summary__checkout"
-                                    onClick={checkout}
                                 >
                                     Оформить заказ
-                                </button>
+                                </Link>
 
                                 <Link
                                     href={catalog().url}

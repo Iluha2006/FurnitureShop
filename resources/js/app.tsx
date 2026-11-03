@@ -23,6 +23,7 @@ void createInertiaApp({
             case name === 'catalog/furniture':
             case name === 'catalog/furniture-show':
             case name === 'cart/index':
+            case name === 'checkout/index':
                 return StorefrontLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;

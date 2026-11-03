@@ -29,8 +29,6 @@ export function useCartNotification() {
         removed: (item: { name: string }) =>
             withItem('Товар удалён из корзины', item.name, 'info', removedIcon),
         cleared: () => notify('Корзина очищена', 'info'),
-        checkoutUnavailable: () =>
-            notify('Оформление заказа пока не доступно', 'warning'),
         failed: (action: string) =>
             notify(`Не удалось ${action}. Попробуйте ещё раз.`, 'error'),
     };
