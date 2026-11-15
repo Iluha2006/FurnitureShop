@@ -29,6 +29,8 @@ final class PlaceOrderHandler implements CommandHandlerInterface
             customerPhone: $command->customerPhone,
             customerEmail: $command->customerEmail,
             deliveryAddress: $command->deliveryAddress,
+            deliveryMethod: $command->deliveryMethod,
+            pickupPointId: $command->pickupPointId,
             comment: $command->comment,
         );
 

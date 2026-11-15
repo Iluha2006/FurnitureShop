@@ -36,6 +36,8 @@ class OrderRepository extends BaseRepository
         string $customerPhone,
         string $customerEmail,
         string $deliveryAddress,
+        string $deliveryMethod = 'delivery',
+        ?string $pickupPointId = null,
         ?string $comment = null,
     ): Order {
         return DB::transaction(function () use (
@@ -44,6 +46,8 @@ class OrderRepository extends BaseRepository
             $customerPhone,
             $customerEmail,
             $deliveryAddress,
+            $deliveryMethod,
+            $pickupPointId,
             $comment,
         ): Order {
             $cart = Cart::query()->where('user_id', $userId)->first();
@@ -86,6 +90,8 @@ class OrderRepository extends BaseRepository
                 'customer_name' => $customerName,
                 'customer_phone' => $customerPhone,
                 'customer_email' => $customerEmail,
+                'delivery_method' => $deliveryMethod,
+                'pickup_point_id' => $pickupPointId,
                 'delivery_address' => $deliveryAddress,
                 'comment' => $comment,
                 'status' => OrderStatus::Pending,

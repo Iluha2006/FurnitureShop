@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             FurnitureCategorySeeder::class,
             FurnitureSeeder::class,
+            PickupPointSeeder::class,
         ]);
 
         if (class_exists(Factory::class)) {

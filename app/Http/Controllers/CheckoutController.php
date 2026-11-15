@@ -6,6 +6,7 @@ use App\Command\PlaceOrderCommand;
 use App\Http\Requests\Checkout\PlaceOrderRequest;
 use App\Interfaces\CommandBusInterface;
 use App\Interfaces\QueryBusInterface;
+use App\Models\PickupPoint;
 use App\Queries\GetCartQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,17 +43,36 @@ class CheckoutController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
             ],
+            'pickupPoints' => $this->pickupPoints(),
+            'deliveryCity' => config('yandex.city.name'),
+            'cityCenter' => [
+                'latitude' => (float) config('yandex.city.latitude'),
+                'longitude' => (float) config('yandex.city.longitude'),
+            ],
+            'yandexMapsApiKey' => (string) config('yandex.maps_api_key'),
         ]);
     }
 
     public function store(PlaceOrderRequest $request): RedirectResponse
     {
+        $deliveryMethod = $request->string('delivery_method')
+            ->trim()
+            ->toString() ?: 'delivery';
+        $pickupPointId = $deliveryMethod === 'pickup'
+            ? $request->string('pickup_point_id')->toString()
+            : null;
+        $deliveryAddress = $deliveryMethod === 'pickup'
+            ? $this->pickupDeliveryAddress($pickupPointId)
+            : $request->string('delivery_address')->trim()->toString();
+
         $this->commandBus->dispatch(new PlaceOrderCommand(
             userId: $request->user()->id,
             customerName: $request->string('customer_name')->trim()->toString(),
             customerPhone: $request->string('customer_phone')->trim()->toString(),
             customerEmail: $request->string('customer_email')->trim()->toString(),
-            deliveryAddress: $request->string('delivery_address')->trim()->toString(),
+            deliveryAddress: $deliveryAddress,
+            deliveryMethod: $deliveryMethod,
+            pickupPointId: $pickupPointId,
             comment: $request->filled('comment')
                 ? $request->string('comment')->trim()->toString()
                 : null,
@@ -64,5 +84,44 @@ class CheckoutController extends Controller
         ]);
 
         return redirect()->route('account.orders');
+    }
+
+    /**
+     * Active pickup points for the map and list picker.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function pickupPoints(): array
+    {
+        return PickupPoint::query()
+            ->where('is_active', true)
+            ->orderBy('sort')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (PickupPoint $point): array => [
+                'id' => $point->id,
+                'name' => $point->name,
+                'address' => $point->address,
+                'phone' => $point->phone,
+                'email' => $point->email,
+                'opening_hours' => $point->opening_hours,
+                'description' => $point->description,
+                'latitude' => (float) $point->latitude,
+                'longitude' => (float) $point->longitude,
+            ])
+            ->all();
+    }
+
+    private function pickupDeliveryAddress(?string $pickupPointId): string
+    {
+        if ($pickupPointId === null) {
+            return '';
+        }
+
+        $point = PickupPoint::query()->find($pickupPointId);
+
+        return $point instanceof PickupPoint
+            ? $point->address
+            : '';
     }
 }

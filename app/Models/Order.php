@@ -18,6 +18,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $customer_name
  * @property string|null $customer_phone
  * @property string|null $customer_email
+ * @property string $delivery_method
+ * @property string|null $pickup_point_id
  * @property string|null $delivery_address
  * @property string|null $comment
  * @property OrderStatus $status
@@ -26,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
+ * @property-read PickupPoint|null $pickupPoint
  * @property-read Collection<int, OrderItem> $items
  */
 #[Fillable([
@@ -33,6 +36,8 @@ use Illuminate\Support\Carbon;
     'customer_name',
     'customer_phone',
     'customer_email',
+    'delivery_method',
+    'pickup_point_id',
     'delivery_address',
     'comment',
     'status',
@@ -62,6 +67,16 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Get the pickup point of this order, when the order is a pickup.
+     *
+     * @return BelongsTo<PickupPoint, $this>
+     */
+    public function pickupPoint(): BelongsTo
+    {
+        return $this->belongsTo(PickupPoint::class);
     }
 
     /**

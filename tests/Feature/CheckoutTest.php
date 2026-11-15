@@ -7,6 +7,7 @@ use App\Models\CartItem;
 use App\Models\Furniture;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\PickupPoint;
 use App\Models\User;
 use App\Queries\GetOrdersQuery;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -84,7 +85,7 @@ test('placing an order snapshots cart prices, clears the cart and reserves stock
 
     expect($order)->not->toBeNull()
         ->and($order->status->value)->toBe('pending')
-        ->and($order->total_amount)->toBe('50000.00')
+        ->and($order->total_amount)->toEqual('50000.00')
         ->and($order->total_currency)->toBe('RUB')
         ->and($order->customer_name)->toBe('Иван Иванов')
         ->and($order->customer_phone)->toBe('+7 900 000-00-00')
@@ -102,6 +103,86 @@ test('placing an order snapshots cart prices, clears the cart and reserves stock
 
     expect(CartItem::where('cart_id', $cart->id)->count())->toBe(0)
         ->and($furniture->refresh()->quantity)->toBe(8);
+});
+
+test('an order can be picked up at a pickup point', function () {
+    $user = User::factory()->create();
+    $cart = Cart::factory()->create(['user_id' => $user->id]);
+    $furniture = Furniture::factory()->create([
+        'name' => 'Комод',
+        'quantity' => 3,
+    ]);
+    CartItem::factory()->create([
+        'cart_id' => $cart->id,
+        'furniture_id' => $furniture->furniture_id,
+        'quantity' => 1,
+        'price_amount' => '10000.00',
+        'price_currency' => 'RUB',
+    ]);
+
+    $point = PickupPoint::factory()->create([
+        'address' => 'Москва, ул. Тверская, д. 9, строение 1',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('checkout.store'), [
+            'customer_name' => 'Иван Иванов',
+            'customer_phone' => '+7 900 000-00-00',
+            'customer_email' => 'ivan@example.com',
+            'delivery_method' => 'pickup',
+            'pickup_point_id' => $point->id,
+            'comment' => 'Заберу завтра после 18:00',
+        ])
+        ->assertRedirect(route('account.orders'));
+
+    $order = Order::query()->where('user_id', $user->id)->first();
+
+    expect($order)->not->toBeNull()
+        ->and($order->delivery_method)->toBe('pickup')
+        ->and($order->pickup_point_id)->toBe($point->id)
+        ->and($order->delivery_address)->toBe(
+            'Москва, ул. Тверская, д. 9, строение 1',
+        );
+});
+
+test('checkout requires a pickup point for pickup orders', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('checkout.store'), [
+            'customer_name' => 'Иван Иванов',
+            'customer_phone' => '+7 900 000-00-00',
+            'customer_email' => 'ivan@example.com',
+            'delivery_method' => 'pickup',
+            'pickup_point_id' => '',
+        ])
+        ->assertSessionHasErrors(['pickup_point_id']);
+
+    expect(Order::count())->toBe(0);
+});
+
+test('checkout page shows pickup points for the map picker', function () {
+    $user = User::factory()->create(['name' => 'Иван Иванов']);
+    $cart = Cart::factory()->create(['user_id' => $user->id]);
+    $furniture = Furniture::factory()->create(['quantity' => 5]);
+    CartItem::factory()->create([
+        'cart_id' => $cart->id,
+        'furniture_id' => $furniture->furniture_id,
+        'quantity' => 1,
+        'price_currency' => 'RUB',
+    ]);
+
+    PickupPoint::factory()->count(2)->create();
+
+    $response = $this->actingAs($user)->get(route('checkout.index'));
+
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('checkout/index')
+        ->has('pickupPoints', 2)
+        ->has('pickupPoints.0.id')
+        ->where('deliveryCity', 'Москва'),
+    );
 });
 
 test('checkout validates the customer details', function () {
