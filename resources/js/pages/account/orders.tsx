@@ -72,8 +72,7 @@ export default function AccountOrders({ orders }: Props) {
                                     <Link
                                         href={
                                             furnitureShow({
-                                                furniture_id:
-                                                    item.furniture_id,
+                                                furniture_id: item.furniture_id,
                                             }).url
                                         }
                                         className="order-item__media"

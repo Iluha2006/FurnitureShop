@@ -42,9 +42,7 @@ export function useWarehouseMapController(
     const center = useMemo<[number, number]>(() => {
         const first = warehouses[0];
 
-        return first
-            ? [first.latitude, first.longitude]
-            : fallbackCenter;
+        return first ? [first.latitude, first.longitude] : fallbackCenter;
     }, [warehouses, fallbackCenter]);
 
     const { state, saveState } = useMapState(center, CITY_ZOOM);
@@ -75,16 +73,13 @@ export function useWarehouseMapController(
         });
     }, []);
 
-    const openBalloon = useCallback(
-        (name: string) => {
-            const placemark = placemarkRefs.current[name];
+    const openBalloon = useCallback((name: string) => {
+        const placemark = placemarkRefs.current[name];
 
-            if (placemark) {
-                void placemark.balloon.open();
-            }
-        },
-        [],
-    );
+        if (placemark) {
+            void placemark.balloon.open();
+        }
+    }, []);
 
     const flyTo = useCallback(
         (coords: [number, number], name?: string) => {
@@ -96,11 +91,13 @@ export function useWarehouseMapController(
 
             closeBalloons();
 
-            void map.panTo(coords, { delay: 300, useMapMargin: true }).then(() => {
-                if (name) {
-                    openBalloon(name);
-                }
-            });
+            void map
+                .panTo(coords, { delay: 300, useMapMargin: true })
+                .then(() => {
+                    if (name) {
+                        openBalloon(name);
+                    }
+                });
         },
         [closeBalloons, openBalloon],
     );

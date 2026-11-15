@@ -47,29 +47,45 @@ export function buildPickupBalloonContent(
           ${address}
         </div>
 
-        ${point.description ? `
+        ${
+            point.description
+                ? `
           <div style="font-size: 12px; color: #7d7669;">
             ${escapeHtml(point.description)}
           </div>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${phone ? `
+        ${
+            phone
+                ? `
           <div style="font-size: 14px; color: #2c2a26;">
             <a href="tel:${phone}" style="color: #a04925; text-decoration: none;">${phone}</a>
           </div>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${email ? `
+        ${
+            email
+                ? `
           <div style="font-size: 14px; color: #2c2a26;">
             <a href="mailto:${email}" style="color: #a04925; text-decoration: none;">${email}</a>
           </div>
-        ` : ''}
+        `
+                : ''
+        }
 
-        ${point.opening_hours ? `
+        ${
+            point.opening_hours
+                ? `
           <div style="font-size: 12px; color: #7d7669; white-space: pre-line;">
             ${escapeHtml(point.opening_hours)}
           </div>
-        ` : ''}
+        `
+                : ''
+        }
       </div>
     </div>`;
 }

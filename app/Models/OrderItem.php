@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Order $order
- * @property-read Furniture $furniture
+ * @property-read Furniture|null $furniture
  */
 #[Fillable(['order_id', 'furniture_id', 'quantity', 'price_amount', 'price_currency'])]
 class OrderItem extends Model

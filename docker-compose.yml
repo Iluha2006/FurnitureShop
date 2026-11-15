@@ -3,14 +3,11 @@ services:
         build:
             context: .
             dockerfile: docker/php/Dockerfile
+            args:
+                ALPINE_MIRROR: https://mirror.yandex.ru/mirrors/alpine
         image: archiweb-app:latest
         restart: unless-stopped
         env_file: .env
-        environment:
-            DB_HOST: ${DB_HOST:-db}
-            DB_PORT: ${DB_PORT:-5432}
-            APP_URL: ${APP_URL:-http://localhost:8080}
-            INERTIA_SSR_HOT_URL: ${INERTIA_SSR_HOT_URL:-http://vite:5173}
 
         volumes:
             - ./:/var/www/html
@@ -19,7 +16,7 @@ services:
                 condition: service_healthy
             redis:
                 condition: service_healthy
-  
+
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         networks:
@@ -66,7 +63,6 @@ services:
         networks:
             - archiweb
 
-
     ssr:
         build:
             context: .
@@ -91,25 +87,22 @@ services:
             - archiweb
 
     redis:
-        # Plain Redis instead of redis-stack: the app only uses the cache
-        # store, and this image starts in under a second without modules.
         image: redis:7-alpine
         restart: unless-stopped
-        environment:
-            REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+        # Local dev cache: no password, matching REDIS_PASSWORD=null in .env
+        # (Laravel casts the "null" literal to no-auth, so requirepass "null"
+        # would always break the connection).
         command:
             - sh
             - -c
             - >
                 exec redis-server
-                --requirepass "$$REDIS_PASSWORD"
                 --maxmemory 256mb
                 --maxmemory-policy allkeys-lru
                 --save ""
                 --appendonly no
         healthcheck:
-            test:
-                ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" ping | grep PONG']
+            test: ['CMD-SHELL', 'redis-cli ping | grep PONG']
             interval: 2s
             timeout: 2s
             retries: 30
@@ -118,7 +111,7 @@ services:
             - archiweb
 
     db:
-        image: postgres:16
+        image: postgres:17-alpine
         restart: unless-stopped
         environment:
             POSTGRES_DB: ${DB_DATABASE:?set DB_DATABASE in .env}

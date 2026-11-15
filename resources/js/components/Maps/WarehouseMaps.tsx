@@ -1,5 +1,11 @@
 import { Map, YMaps } from '@pbe/react-yandex-maps';
-import { memo, forwardRef, useCallback, useImperativeHandle, useMemo } from 'react';
+import {
+    memo,
+    forwardRef,
+    useCallback,
+    useImperativeHandle,
+    useMemo,
+} from 'react';
 import WarehouseMarker from '@/components/Maps/WarehouseMarker';
 import { YANDEX_MAP_MODULES } from '@/config/yandex';
 import { useWarehousesCache } from '@/hooks/use-warehouses-cache';

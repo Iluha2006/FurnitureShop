@@ -31,11 +31,12 @@ readonly class OrderItemData
         $lineTotal = round((float) $item->price_amount * $item->quantity, 2);
 
         $mainImage = $furniture?->images->firstWhere('is_main', true);
+        $name = $furniture !== null ? $furniture->name : 'Товар';
 
         return new self(
             id: $item->id,
             furniture_id: $item->furniture_id,
-            name: $furniture?->name ?? 'Товар',
+            name: $name,
             quantity: $item->quantity,
             price_amount: $item->price_amount,
             price_currency: $item->price_currency,

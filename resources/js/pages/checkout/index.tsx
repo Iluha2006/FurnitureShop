@@ -40,17 +40,13 @@ export default function CheckoutPage({
     cityCenter,
     yandexMapsApiKey = '',
 }: Props) {
-    const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(
-        'delivery',
-    );
+    const [deliveryMethod, setDeliveryMethod] =
+        useState<DeliveryMethod>('delivery');
     const [pickupPointId, setPickupPointId] = useState('');
 
-    const handleSelectPoint = useCallback(
-        (point: PickupPointData) => {
-            setPickupPointId(point.id);
-        },
-        [],
-    );
+    const handleSelectPoint = useCallback((point: PickupPointData) => {
+        setPickupPointId(point.id);
+    }, []);
 
     const isPickup = deliveryMethod === 'pickup';
     const cityCenterCoords: [number, number] | undefined = cityCenter
@@ -84,7 +80,10 @@ export default function CheckoutPage({
                         <>
                             <div className="checkout__main">
                                 {errors.cart && (
-                                    <div className="checkout__error" role="alert">
+                                    <div
+                                        className="checkout__error"
+                                        role="alert"
+                                    >
                                         {errors.cart}
                                     </div>
                                 )}
@@ -205,7 +204,9 @@ export default function CheckoutPage({
                                                 placeholder="Город, улица, дом, квартира"
                                             />
                                             <InputError
-                                                message={errors.delivery_address}
+                                                message={
+                                                    errors.delivery_address
+                                                }
                                                 className="auth-error"
                                             />
                                         </div>

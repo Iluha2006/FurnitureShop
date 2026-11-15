@@ -1,12 +1,6 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import {
-    ChevronRight,
-    Heart,
-    Package,
-    ShoppingCart,
-    User,
-} from 'lucide-react';
+import { ChevronRight, Heart, Package, ShoppingCart, User } from 'lucide-react';
 import PendingInvitationsModal from '@/components/pending-invitations-modal';
 import { catalog, dashboard } from '@/routes';
 import { show as furnitureShow } from '@/routes/catalog/furniture';
@@ -21,14 +15,6 @@ type Props = {
     ordersCount?: number;
     favoritesCount?: number;
     cart?: CartData;
-};
-
-const statusClass: Record<string, string> = {
-    pending: 'order-card__status--pending',
-    processing: 'order-card__status--processing',
-    shipped: 'order-card__status--shipped',
-    delivered: 'order-card__status--delivered',
-    cancelled: 'order-card__status--cancelled',
 };
 
 const plural = (count: number, one: string, few: string, many: string) => {
@@ -198,8 +184,7 @@ export default function Dashboard({
                                             Заказ №{order.id}
                                         </h3>
                                         <p className="order-card__meta">
-                                            {order.created_at} ·{' '}
-                                            {order.count}{' '}
+                                            {order.created_at} · {order.count}{' '}
                                             {plural(
                                                 order.count,
                                                 'товар',
@@ -223,10 +208,12 @@ export default function Dashboard({
                                             key={item.id}
                                         >
                                             <Link
-                                                href={furnitureShow({
-                                                    furniture_id:
-                                                        item.furniture_id,
-                                                }).url}
+                                                href={
+                                                    furnitureShow({
+                                                        furniture_id:
+                                                            item.furniture_id,
+                                                    }).url
+                                                }
                                                 className="order-item__media"
                                                 aria-label={item.name}
                                             >
@@ -246,10 +233,12 @@ export default function Dashboard({
 
                                             <div className="order-item__body">
                                                 <Link
-                                                    href={furnitureShow({
-                                                        furniture_id:
-                                                            item.furniture_id,
-                                                    }).url}
+                                                    href={
+                                                        furnitureShow({
+                                                            furniture_id:
+                                                                item.furniture_id,
+                                                        }).url
+                                                    }
                                                     className="order-item__name"
                                                 >
                                                     {item.name}

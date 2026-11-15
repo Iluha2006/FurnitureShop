@@ -1,7 +1,7 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { catalog } from '@/routes';
 import { category as catalogCategory } from '@/routes/catalog';
-import type { Auth, FurnitureCardData, FurnitureCategoryData } from '@/types';
+import type { FurnitureCardData, FurnitureCategoryData } from '@/types';
 
 type Props = {
     categories: FurnitureCategoryData[];
@@ -9,14 +9,7 @@ type Props = {
     productCount: number;
 };
 
-export default function Welcome({ categories, hits, productCount }: Props) {
-    const { auth, currentTeam } = usePage().props as {
-        auth: Auth;
-        currentTeam: { slug: string } | null;
-    };
-
-    const isAuthenticated = Boolean(auth.user);
-
+export default function Welcome({ categories }: Props) {
     return (
         <>
             <Head title="МебельДом — мебель, которая делает дом уютным" />

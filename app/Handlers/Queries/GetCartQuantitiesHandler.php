@@ -15,6 +15,9 @@ final class GetCartQuantitiesHandler implements QueryHandlerInterface
         //
     }
 
+    /**
+     * @return array<string, int>
+     */
     public function handle(QueryInterface $queryInterface): array
     {
         if (! $queryInterface instanceof GetCartQuantitiesQuery) {

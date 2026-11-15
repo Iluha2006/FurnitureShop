@@ -51,11 +51,7 @@ export default function PickupPicker({
             </div>
 
             {/* Submitted with the form so the backend gets the chosen point. */}
-            <input
-                type="hidden"
-                name="pickup_point_id"
-                value={selectedId}
-            />
+            <input type="hidden" name="pickup_point_id" value={selectedId} />
 
             {points.length > 0 && (
                 <>

@@ -5,10 +5,7 @@ export type MapState = {
     zoom: number;
 };
 
-const areCoordsClose = (
-    a: [number, number],
-    b: [number, number],
-): boolean =>
+const areCoordsClose = (a: [number, number], b: [number, number]): boolean =>
     Math.abs(a[0] - b[0]) < 0.0001 && Math.abs(a[1] - b[1]) < 0.0001;
 
 /**
@@ -29,23 +26,17 @@ export function useMapState(
         zoom: initialZoom,
     });
 
-    const saveState = useCallback(
-        (center: [number, number], zoom: number) => {
-            const current = stateRef.current;
+    const saveState = useCallback((center: [number, number], zoom: number) => {
+        const current = stateRef.current;
 
-            if (
-                current.zoom === zoom &&
-                areCoordsClose(current.center, center)
-            ) {
-                return;
-            }
+        if (current.zoom === zoom && areCoordsClose(current.center, center)) {
+            return;
+        }
 
-            const next: MapState = { center, zoom };
-            stateRef.current = next;
-            setState(next);
-        },
-        [],
-    );
+        const next: MapState = { center, zoom };
+        stateRef.current = next;
+        setState(next);
+    }, []);
 
     return { state, saveState };
 }

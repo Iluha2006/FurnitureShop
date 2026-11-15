@@ -14,6 +14,9 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @extends BaseRepository<Order>
+ */
 class OrderRepository extends BaseRepository
 {
     public function __construct(Order $order)
@@ -21,6 +24,9 @@ class OrderRepository extends BaseRepository
         parent::__construct($order);
     }
 
+    /**
+     * @return Collection<int, Order>
+     */
     public function forUser(int $userId): Collection
     {
         return $this->query()
@@ -117,11 +123,18 @@ class OrderRepository extends BaseRepository
         });
     }
 
+    /**
+     * @return array<int, OrderData>
+     */
     public function buildForUser(int $userId): array
     {
         return OrderData::fromCollection($this->forUser($userId));
     }
 
+    /**
+     * @param  Collection<int, CartItem>  $items
+     * @param  Collection<int, Furniture>  $furniture
+     */
     private function ensureStockIsAvailable(Collection $items, Collection $furniture): void
     {
         foreach ($items as $item) {

@@ -1,6 +1,5 @@
 import { Link } from '@inertiajs/react';
 import { show as furnitureShow } from '@/routes/catalog/furniture';
-import CartAction from '@/components/cart-action';
 import type { FurnitureCardData } from '@/types';
 
 export default function FurnitureCard({ card }: { card: FurnitureCardData }) {

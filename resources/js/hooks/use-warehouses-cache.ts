@@ -8,9 +8,9 @@ import type { PickupPointData } from '@/types/pickupPoint';
  * so memoised markers and the map never re-render or trigger extra
  * Yandex Maps work on unrelated re-renders of the page.
  */
-export function useWarehousesCache(
-    apiWarehouses: PickupPointData[],
-): { warehouses: PickupPointData[] } {
+export function useWarehousesCache(apiWarehouses: PickupPointData[]): {
+    warehouses: PickupPointData[];
+} {
     const ids = useMemo(
         () => apiWarehouses.map((point) => point.id).join('|'),
         [apiWarehouses],

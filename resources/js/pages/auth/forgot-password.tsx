@@ -22,10 +22,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     <>
                         <div className="auth-fields">
                             <div className="auth-field">
-                                <Label
-                                    htmlFor="email"
-                                    className="auth-label"
-                                >
+                                <Label htmlFor="email" className="auth-label">
                                     Email адрес
                                 </Label>
                                 <Input
@@ -71,11 +68,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 )}
             </Form>
 
-            {status && (
-                <div className="auth-status">
-                    {RESET_LINK_SENT}
-                </div>
-            )}
+            {status && <div className="auth-status">{RESET_LINK_SENT}</div>}
         </>
     );
 }
