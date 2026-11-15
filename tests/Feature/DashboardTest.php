@@ -1,9 +1,13 @@
 <?php
 
 use App\Enums\TeamRole;
+use App\Models\Favorite;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Team;
 use App\Models\TeamInvitation;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\Sequence;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('guests are redirected to the login page', function () {
@@ -23,6 +27,55 @@ test('authenticated users can visit the dashboard', function () {
         ->get(route('dashboard'));
 
     $response->assertOk();
+});
+
+test('dashboard exposes profile data: orders, favorites and cart', function () {
+    $user = User::factory()->create();
+
+    $order = Order::factory()->create(['user_id' => $user->id]);
+    OrderItem::factory()->count(2)->create([
+        'order_id' => $order->id,
+        'quantity' => 1,
+    ]);
+
+    Favorite::factory()->count(2)->create(['user_id' => $user->id]);
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('dashboard')
+        ->has('orders', 1)
+        ->has('orders.0.items', 2)
+        ->where('ordersCount', 1)
+        ->where('favoritesCount', 2)
+        ->has('cart')
+        ->where('cart.count', 0),
+    );
+});
+
+test('dashboard passes at most three recent orders with the total count', function () {
+    $user = User::factory()->create();
+
+    Order::factory()
+        ->count(5)
+        ->state(new Sequence(
+            fn (Sequence $sequence) => ['user_id' => $user->id],
+        ))
+        ->create();
+
+    $response = $this
+        ->actingAs($user)
+        ->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('dashboard')
+        ->has('orders', 3)
+        ->where('ordersCount', 5),
+    );
 });
 
 test('dashboard includes pending invitations for the authenticated user', function () {

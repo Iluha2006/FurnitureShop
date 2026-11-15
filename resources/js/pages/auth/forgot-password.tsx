@@ -1,69 +1,87 @@
 // Components
 import { Form, Head } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
+const RESET_LINK_SENT =
+    'Ссылка для восстановления пароля отправлена на указанный email.';
+
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
         <>
-            <Head title="Forgot password" />
+            <Head title="Восстановление пароля" />
 
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
-
-            <div className="space-y-6">
-                <Form {...email.form()}>
-                    {({ processing, errors }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+            <Form {...email.form()} className="auth-form">
+                {({ processing, errors }) => (
+                    <>
+                        <div className="auth-fields">
+                            <div className="auth-field">
+                                <Label
+                                    htmlFor="email"
+                                    className="auth-label"
+                                >
+                                    Email адрес
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
                                     name="email"
-                                    autoComplete="off"
+                                    required
                                     autoFocus
+                                    tabIndex={1}
+                                    autoComplete="email"
                                     placeholder="email@example.com"
+                                    className="auth-input"
                                 />
-
-                                <InputError message={errors.email} />
+                                <InputError
+                                    message={errors.email}
+                                    className="auth-error"
+                                />
                             </div>
 
-                            <div className="my-6 flex items-center justify-start">
-                                <Button
-                                    className="w-full"
-                                    disabled={processing}
-                                    data-test="email-password-reset-link-button"
-                                >
-                                    {processing && (
-                                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                                    )}
-                                    Email password reset link
-                                </Button>
-                            </div>
-                        </>
-                    )}
-                </Form>
+                            <Button
+                                type="submit"
+                                className="auth-btn"
+                                tabIndex={2}
+                                disabled={processing}
+                                data-test="email-password-reset-link-button"
+                            >
+                                {processing && <Spinner />}
+                                Отправить ссылку для восстановления
+                            </Button>
+                        </div>
 
-                <div className="text-muted-foreground space-x-1 text-center text-sm">
-                    <span>Or, return to</span>
-                    <TextLink href={login()}>log in</TextLink>
+                        <div className="auth-foot">
+                            Вспомнили пароль?{' '}
+                            <TextLink
+                                href={login()}
+                                className="auth-link"
+                                tabIndex={3}
+                            >
+                                Войти
+                            </TextLink>
+                        </div>
+                    </>
+                )}
+            </Form>
+
+            {status && (
+                <div className="auth-status">
+                    {RESET_LINK_SENT}
                 </div>
-            </div>
+            )}
         </>
     );
 }
 
 ForgotPassword.layout = {
-    title: 'Forgot password',
-    description: 'Enter your email to receive a password reset link',
+    title: 'Восстановление пароля',
+    description:
+        'Укажите email, на который мы отправим ссылку для сброса пароля',
 };

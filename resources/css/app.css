@@ -2945,6 +2945,164 @@ button {
     color: var(--accent-dark);
 }
 
+/* ---------- Profile dashboard ---------- */
+
+.dash__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px 20px;
+    margin: 20px 0 26px;
+}
+
+.dash__greeting {
+    font-size: 32px;
+    line-height: 1.15;
+    margin: 0 0 8px;
+}
+
+.dash__greeting span {
+    color: var(--accent-dark);
+}
+
+.dash__desc {
+    margin: 0;
+    font-size: 15px;
+    color: var(--text-muted);
+}
+
+.dash__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 30px;
+}
+
+.dash-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    text-decoration: none;
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+.dash-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+.dash-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.dash-card__icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+}
+
+.dash-card__more {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg-alt);
+    color: var(--text-muted);
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.dash-card:hover .dash-card__more {
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+}
+
+.dash-card__value {
+    font-size: 26px;
+    line-height: 1.2;
+    font-weight: 700;
+    color: var(--accent-dark);
+}
+
+.dash-card__label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.dash-card__hint {
+    font-size: 13px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dash-card__hint--muted {
+    font-style: italic;
+}
+
+.dash__orders {
+    margin-bottom: 40px;
+}
+
+.dash__orders-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.dash__orders-title {
+    font-size: 21px;
+    line-height: 1.3;
+    margin: 0;
+}
+
+.dash__orders-link {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.dash__orders-link:hover {
+    color: var(--accent-dark);
+    text-decoration: underline;
+}
+
+@media (max-width: 1000px) {
+    .dash__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    .dash__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ---------- Checkout: how to receive the order ---------- */
 
 .checkout__methods {

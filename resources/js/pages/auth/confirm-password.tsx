@@ -1,3 +1,4 @@
+// Components
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -14,44 +15,53 @@ import PasskeyVerify from '@/components/passkey-verify';
 export default function ConfirmPassword() {
     return (
         <>
-            <Head title="Confirm password" />
+            <Head title="Подтверждение пароля" />
 
             <PasskeyVerify
                 routes={{
                     options: confirmOptions(),
                     submit: confirmStore(),
                 }}
-                label="Confirm with passkey"
-                loadingLabel="Confirming..."
-                separator="Or confirm with password"
+                label="Подтвердить с помощью пассключа"
+                loadingLabel="Подтверждение..."
+                separator="Или подтвердите паролем"
             />
 
-            <Form {...store.form()} resetOnSuccess={['password']}>
+            <Form
+                {...store.form()}
+                resetOnSuccess={['password']}
+                className="auth-form"
+            >
                 {({ processing, errors }) => (
-                    <div className="space-y-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                    <div className="auth-fields">
+                        <div className="auth-field">
+                            <Label htmlFor="password" className="auth-label">
+                                Пароль
+                            </Label>
                             <PasswordInput
                                 id="password"
                                 name="password"
-                                placeholder="Password"
+                                placeholder="Пароль"
                                 autoComplete="current-password"
                                 autoFocus
+                                className="auth-input"
                             />
 
-                            <InputError message={errors.password} />
+                            <InputError
+                                message={errors.password}
+                                className="auth-error"
+                            />
                         </div>
 
-                        <div className="flex items-center">
-                            <Button
-                                className="w-full"
-                                disabled={processing}
-                                data-test="confirm-password-button"
-                            >
-                                {processing && <Spinner />}
-                                Confirm password
-                            </Button>
-                        </div>
+                        <Button
+                            type="submit"
+                            className="auth-btn"
+                            disabled={processing}
+                            data-test="confirm-password-button"
+                        >
+                            {processing && <Spinner />}
+                            Подтвердить пароль
+                        </Button>
                     </div>
                 )}
             </Form>
@@ -60,7 +70,7 @@ export default function ConfirmPassword() {
 }
 
 ConfirmPassword.layout = {
-    title: 'Confirm password',
+    title: 'Подтверждение пароля',
     description:
-        'This is a secure area of the application. Please confirm your password before continuing.',
+        'Это защищённая зона приложения. Пожалуйста, подтвердите пароль, чтобы продолжить.',
 };
