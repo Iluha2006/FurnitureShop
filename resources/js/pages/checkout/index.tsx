@@ -1,5 +1,8 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import { ChevronLeft, ShieldCheck } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import DeliveryMethodChoice from '@/components/checkout/delivery-method-choice';
+import PickupPicker from '@/components/checkout/pickup-picker';
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,19 +11,52 @@ import { catalog } from '@/routes';
 import { index as cartRoute } from '@/routes/cart';
 import { store } from '@/routes/checkout';
 import { show as furnitureShow } from '@/routes/catalog/furniture';
-import type { CartData } from '@/types';
+import type { CartData, DeliveryMethod, PickupPointData } from '@/types';
 
 type Customer = {
     name: string;
     email: string;
 };
 
+type CityCenter = {
+    latitude: number;
+    longitude: number;
+};
+
 type Props = {
     cart: CartData;
     customer: Customer;
+    pickupPoints?: PickupPointData[];
+    deliveryCity?: string;
+    cityCenter?: CityCenter;
+    yandexMapsApiKey?: string;
 };
 
-export default function CheckoutPage({ cart, customer }: Props) {
+export default function CheckoutPage({
+    cart,
+    customer,
+    pickupPoints = [],
+    deliveryCity = 'Москва',
+    cityCenter,
+    yandexMapsApiKey = '',
+}: Props) {
+    const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(
+        'delivery',
+    );
+    const [pickupPointId, setPickupPointId] = useState('');
+
+    const handleSelectPoint = useCallback(
+        (point: PickupPointData) => {
+            setPickupPointId(point.id);
+        },
+        [],
+    );
+
+    const isPickup = deliveryMethod === 'pickup';
+    const cityCenterCoords: [number, number] | undefined = cityCenter
+        ? [cityCenter.latitude, cityCenter.longitude]
+        : undefined;
+
     return (
         <>
             <Head title="Оформление заказа" />
@@ -37,9 +73,9 @@ export default function CheckoutPage({ cart, customer }: Props) {
                 <section className="cart__head">
                     <h1>Оформление заказа</h1>
                     <p className="cart__desc">
-                        Заполните контактные данные и адрес доставки. Мы
-                        свяжемся с вами, чтобы подтвердить заказ и удобное время
-                        доставки.
+                        Заполните контактные данные и выберите, как получить
+                        заказ: доставкой по Москве или самовывозом из пункта
+                        выдачи на карте.
                     </p>
                 </section>
 
@@ -130,30 +166,50 @@ export default function CheckoutPage({ cart, customer }: Props) {
 
                                 <section className="checkout__panel">
                                     <h2 className="checkout__panel-title">
-                                        Доставка
+                                        Как вы хотите забрать товар
                                     </h2>
 
-                                    <div className="auth-field checkout__field">
-                                        <Label
-                                            htmlFor="delivery_address"
-                                            className="auth-label"
-                                        >
-                                            Адрес доставки
-                                        </Label>
-                                        <textarea
-                                            id="delivery_address"
-                                            name="delivery_address"
-                                            className="auth-input checkout__textarea"
-                                            required
-                                            rows={3}
-                                            autoComplete="street-address"
-                                            placeholder="Город, улица, дом, квартира"
+                                    <DeliveryMethodChoice
+                                        value={deliveryMethod}
+                                        onChange={setDeliveryMethod}
+                                        error={errors.delivery_method}
+                                    />
+
+                                    {isPickup && (
+                                        <PickupPicker
+                                            city={deliveryCity}
+                                            cityCenter={cityCenterCoords}
+                                            points={pickupPoints}
+                                            apiKey={yandexMapsApiKey}
+                                            selectedId={pickupPointId}
+                                            error={errors.pickup_point_id}
+                                            onSelect={handleSelectPoint}
                                         />
-                                        <InputError
-                                            message={errors.delivery_address}
-                                            className="auth-error"
-                                        />
-                                    </div>
+                                    )}
+
+                                    {!isPickup && (
+                                        <div className="auth-field checkout__field">
+                                            <Label
+                                                htmlFor="delivery_address"
+                                                className="auth-label"
+                                            >
+                                                Адрес доставки
+                                            </Label>
+                                            <textarea
+                                                id="delivery_address"
+                                                name="delivery_address"
+                                                className="auth-input checkout__textarea"
+                                                required
+                                                rows={3}
+                                                autoComplete="street-address"
+                                                placeholder="Город, улица, дом, квартира"
+                                            />
+                                            <InputError
+                                                message={errors.delivery_address}
+                                                className="auth-error"
+                                            />
+                                        </div>
+                                    )}
 
                                     <div className="auth-field checkout__field">
                                         <Label
@@ -167,7 +223,11 @@ export default function CheckoutPage({ cart, customer }: Props) {
                                             name="comment"
                                             className="auth-input checkout__textarea"
                                             rows={3}
-                                            placeholder="Этаж, лифт, удобное время доставки — всё, что важно знать курьеру"
+                                            placeholder={
+                                                isPickup
+                                                    ? 'Например: заберу завтра после 18:00'
+                                                    : 'Этаж, лифт, удобное время доставки — всё, что важно знать курьеру'
+                                            }
                                         />
                                         <InputError
                                             message={errors.comment}

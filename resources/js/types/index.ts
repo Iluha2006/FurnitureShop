@@ -3,5 +3,6 @@ export type * from './cart';
 export type * from './furniture';
 export type * from './navigation';
 export type * from './order';
+export type * from './pickupPoint';
 export type * from './teams';
 export type * from './ui';
